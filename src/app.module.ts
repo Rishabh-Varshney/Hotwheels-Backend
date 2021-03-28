@@ -8,6 +8,7 @@ import { Restaurant } from './restaurants/entities/restaurant.entity';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { User } from './users/entities/user.entity';
+import { JwtModule } from './jwt/jwt.module';
 
 @Module({
   imports: [
@@ -25,9 +26,6 @@ import { User } from './users/entities/user.entity';
         TOKEN_SECRET: Joi.string().required,
       }),
     }),
-    GraphQLModule.forRoot({
-      autoSchemaFile: true,
-    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -39,6 +37,10 @@ import { User } from './users/entities/user.entity';
       logging: true,
       entities: [User],
     }),
+    GraphQLModule.forRoot({
+      autoSchemaFile: true,
+    }),
+    JwtModule.forRoot(),
     UsersModule,
     CommonModule,
   ],
