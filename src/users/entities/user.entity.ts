@@ -19,11 +19,11 @@ enum UserRole {
 
 registerEnumType(UserRole, { name: 'UserRole' });
 
-@InputType('UserInputType',{ isAbstract: true })
+@InputType('UserInputType', { isAbstract: true })
 @ObjectType()
 @Entity()
 export class User extends CoreEntity {
-  @Column()
+  @Column({ unique: true })
   @Field(type => String)
   @IsEmail()
   email: string;
@@ -42,10 +42,13 @@ export class User extends CoreEntity {
   @Field(type => Boolean)
   @IsBoolean()
   verified: boolean;
-  
-  @Field(type=>[Restaurant])
-  @OneToMany(type=>Restaurant,restaurant=>restaurant.owner)
-  restaurants:Restaurant[];
+
+  @Field(type => [Restaurant])
+  @OneToMany(
+    type => Restaurant,
+    restaurant => restaurant.owner,
+  )
+  restaurants: Restaurant[];
 
   @BeforeInsert()
   @BeforeUpdate()
