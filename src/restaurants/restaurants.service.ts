@@ -6,6 +6,10 @@ import {
   CreateRestaurantInput,
   CreateRestaurantOutput,
 } from './dtos/create-restaurant.dto';
+import {
+  EditRestaurantInput,
+  EditRestaurantOutput,
+} from './dtos/edit-restaurant.dto';
 import { Category } from './entities/category.entity';
 import { Restaurant } from './entities/restaurant.entity';
 
@@ -17,7 +21,6 @@ export class RestaurantService {
     @InjectRepository(Category)
     private readonly categories: Repository<Category>,
   ) {}
-
   async createRestaurant(
     owner: User,
     createRestaurantInput: CreateRestaurantInput,
@@ -47,4 +50,9 @@ export class RestaurantService {
       };
     }
   }
+
+  // async editRestaurant(
+  //   owner: User,
+  //   editRestaurantInput: EditRestaurantInput,
+  // ): Promise<EditRestaurantOutput> {}
 }
