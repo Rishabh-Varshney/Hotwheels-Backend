@@ -123,7 +123,7 @@ export class RestaurantService {
       };
     }
   }
-    async allCategories(): Promise<AllCategoriesOutput> {
+  async allCategories(): Promise<AllCategoriesOutput> {
     try {
       const categories = await this.categories.find();
       return {
@@ -136,5 +136,8 @@ export class RestaurantService {
         error: 'Could not load categories',
       };
     }
+  }
+  countRestaurants(category: Category) {
+    return this.restaurants.count({ category });
   }
 }
