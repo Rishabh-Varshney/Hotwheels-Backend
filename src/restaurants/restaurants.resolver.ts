@@ -32,6 +32,7 @@ import { RestaurantService } from './restaurants.service';
 @Resolver(of => Restaurant)
 export class RestaurantResolver {
   constructor(private readonly restaurantService: RestaurantService) {}
+
   @Mutation(returns => CreateRestaurantOutput)
   @Role(['Owner'])
   async createRestaurant(
@@ -49,11 +50,11 @@ export class RestaurantResolver {
   editRestaurant(
     @AuthUser() owner: User,
     @Args('input') editRestaurantInput: EditRestaurantInput,
-    ): Promise<EditRestaurantOutput> {
+  ): Promise<EditRestaurantOutput> {
     return this.restaurantService.editRestaurant(owner, editRestaurantInput);
   }
 
-    @Mutation(returns => DeleteRestaurantOutput)
+  @Mutation(returns => DeleteRestaurantOutput)
   @Role(['Owner'])
   deleteRestaurant(
     @AuthUser() owner: User,
@@ -71,7 +72,7 @@ export class CategoryResolver {
   constructor(private readonly restaurantService: RestaurantService) {}
 
   @ResolveField(type => Int)
-    restaurantCount(@Parent() category: Category): Promise<number> {
+  restaurantCount(@Parent() category: Category): Promise<number> {
     return this.restaurantService.countRestaurants(category);
   }
 
@@ -81,7 +82,9 @@ export class CategoryResolver {
   }
 
   @Query(type => CategoryOutput)
-  category(@Args() categoryInput: CategoryInput): Promise<CategoryOutput> {
+  category(
+    @Args('input') categoryInput: CategoryInput,
+  ): Promise<CategoryOutput> {
     return this.restaurantService.findCategoryBySlug(categoryInput);
   }
 }
