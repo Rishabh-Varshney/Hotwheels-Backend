@@ -42,3 +42,7 @@ The Backend of Hotwheels
 
 - Orders CRUD
 - Orders Subscription (Owner, Customer, Delivery)
+
+## Payments
+
+- Payments(CRON)
