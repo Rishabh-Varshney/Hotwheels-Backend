@@ -18,9 +18,9 @@ export class MailService {
     const form = new FormData();
     form.append(
       'from',
-      `Nico from Nuber Eats <mailgun@${this.options.domain}>`,
+      `Rishabh from HotWheels <mailgun@${this.options.domain}>`,
     );
-    form.append('to', `nico@nomadcoders.co`);
+    form.append('to', `hotwheelswebapp2@gmail.com`);
     form.append('subject', subject);
     form.append('template', template);
     emailVars.forEach(eVar => form.append(`v:${eVar.key}`, eVar.value));
