@@ -42,6 +42,9 @@ The Backend of Hotwheels
 
 - Orders CRUD
 - Orders Subscription (Owner, Customer, Delivery)
+  - Pending Orders (Owner) (S: newOrder) (T: createOrder(newOrder))
+  - Order Status (Customer, Delivery, Owner) (S: orderUpdate) (T: editOrder(orderUpdate))
+  - Pending Pickup Order (Delivery) (S: orderUpdate) (T: editOrder(orderUpdate))
 
 ## Payments
 
