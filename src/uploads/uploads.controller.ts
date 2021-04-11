@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as AWS from 'aws-sdk';
 
-const BUCKET_NAME = 'kimchinubereats123';
+const BUCKET_NAME = 'hotwheelswebapp';
 
 @Controller('uploads')
 export class UploadsController {
