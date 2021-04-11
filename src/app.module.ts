@@ -9,10 +9,10 @@ import { JwtModule } from './jwt/jwt.module';
 import { AuthModule } from './auth/auth.module';
 import { Verification } from './users/entities/verification.entity';
 import { MailModule } from './mail/mail.module';
-import { Restaurant } from './restaurants/entities/restaurant.entity';
-import { Category } from './restaurants/entities/category.entity';
-import { RestaurantsModule } from './restaurants/restaurants.module';
-import { Dish } from './restaurants/entities/dish.entity';
+import { Store } from './stores/entities/store.entity';
+import { Category } from './stores/entities/category.entity';
+import { StoresModule } from './stores/stores.module';
+import { Product } from './stores/entities/product.entity';
 import { OrdersModule } from './orders/orders.module';
 import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item.entity';
@@ -58,9 +58,9 @@ import { UploadsModule } from './uploads/uploads.module';
       entities: [
         User,
         Verification,
-        Restaurant,
+        Store,
         Category,
-        Dish,
+        Product,
         Order,
         OrderItem,
         Payment,
@@ -87,7 +87,7 @@ import { UploadsModule } from './uploads/uploads.module';
     }),
     AuthModule,
     UsersModule,
-    RestaurantsModule,
+    StoresModule,
     OrdersModule,
     CommonModule,
     PaymentsModule,

@@ -3,10 +3,10 @@ import { CoreOutput } from 'src/common/dtos/output.dto';
 import { In } from 'typeorm';
 
 @InputType()
-export class DeleteDishInput {
+export class DeleteProductInput {
   @Field(type => Int)
-  dishId: number;
+  productId: number;
 }
 
 @ObjectType()
-export class DeleteDishOutput extends CoreOutput {}
+export class DeleteProductOutput extends CoreOutput {}

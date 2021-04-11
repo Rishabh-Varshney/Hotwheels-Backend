@@ -19,24 +19,24 @@ The Backend of Hotwheels
 - Edit Profile
 - Verify Email
 
-## Restaurant Model
+## Store Model
 
 - name
 - category
 - address
 - coverImage
-- Edit Restaurant
-- Delete Restaurant
+- Edit Store
+- Delete Store
 - See Categories
-- See Restaurants by Category (pagination)
-- See Restaurants (pagination)
-- See Restaurant
+- See Stores by Category (pagination)
+- See Stores (pagination)
+- See Store
 
-## Dishes CRUD
+## Products CRUD
 
-- Create Dish
-- Edit Dish
-- Delete Dish
+- Create Product
+- Edit Product
+- Delete Product
 
 ## Orders CRUD
 

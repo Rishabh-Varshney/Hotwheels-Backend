@@ -9,7 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { InternalServerErrorException } from '@nestjs/common';
 import { IsBoolean, IsEmail, IsEnum, IsString } from 'class-validator';
-import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
+import { Store } from 'src/stores/entities/store.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { Payment } from 'src/payments/entities/payment.entity';
 
@@ -45,12 +45,12 @@ export class User extends CoreEntity {
   @IsBoolean()
   verified: boolean;
 
-  @Field(type => [Restaurant])
+  @Field(type => [Store])
   @OneToMany(
-    type => Restaurant,
-    restaurant => restaurant.owner,
+    type => Store,
+    store => store.owner,
   )
-  restaurants: Restaurant[];
+  stores: Store[];
 
   @Field(type => [Order])
   @OneToMany(
