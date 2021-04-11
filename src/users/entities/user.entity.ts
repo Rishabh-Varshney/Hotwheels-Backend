@@ -16,6 +16,7 @@ import { Payment } from 'src/payments/entities/payment.entity';
 export enum UserRole {
   Client = 'Client',
   Owner = 'Owner',
+  Retailer='Retailer',
   Delivery = 'Delivery',
 }
 
@@ -34,6 +35,11 @@ export class User extends CoreEntity {
   @Field(type => String)
   @IsString()
   password: string;
+
+  @Column()
+  @Field(type => String)
+  @IsString()
+  location: string;
 
   @Column({ type: 'enum', enum: UserRole })
   @Field(type => UserRole)
