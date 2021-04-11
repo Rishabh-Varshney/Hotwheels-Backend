@@ -48,4 +48,11 @@ export class MailService {
       { key: 'username', value: email },
     ]);
   }
+  
+  sendOtpEmail(email: string, code: string) {
+    this.sendEmail(`OTP=${code}`, 'verify-email', [
+      { key: 'code', value: code },
+      { key: 'username', value: email },
+    ]);
+  }
 }

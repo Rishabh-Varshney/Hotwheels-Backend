@@ -8,7 +8,7 @@ import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { InternalServerErrorException } from '@nestjs/common';
-import { IsBoolean, IsEmail, IsEnum, IsString } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsNumber, IsString } from 'class-validator';
 import { Store } from 'src/stores/entities/store.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { Payment } from 'src/payments/entities/payment.entity';
@@ -50,6 +50,11 @@ export class User extends CoreEntity {
   @Field(type => Boolean)
   @IsBoolean()
   verified: boolean;
+
+  @Column({default: 0})
+  @Field(type => Number)
+  @IsNumber()
+  otp?: Number;
 
   @Field(type => [Store])
   @OneToMany(

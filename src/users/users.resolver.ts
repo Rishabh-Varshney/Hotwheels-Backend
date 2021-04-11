@@ -9,6 +9,7 @@ import {
 } from './dtos/create-account.dto';
 import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
 import { LoginInput, LoginOutput } from './dtos/login.dto';
+import { OTPInput, OTPOutput } from './dtos/otp.dto';
 import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
 import { VerifyEmailInput, VerifyEmailOutput } from './dtos/verify-email.dto';
 import { User } from './entities/user.entity';
@@ -44,6 +45,13 @@ export class UserResolver {
     return this.usersService.findById(userProfileInput.userId);
   }
 
+  @Query(returns => OTPOutput)
+  async otpVerify(
+    @Args('input') otpinput: OTPInput,
+  ): Promise<UserProfileOutput> {
+    return this.usersService.verifyOtp(otpinput);
+  }
+
   @Mutation(returns => EditProfileOutput)
   @Role(["Any"])
   @UseGuards(AuthGuard)
@@ -60,4 +68,6 @@ export class UserResolver {
   ): Promise<VerifyEmailOutput> {
     return this.usersService.verifyEmail(code);
   }
+
+  
 }
