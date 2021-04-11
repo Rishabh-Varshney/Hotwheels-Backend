@@ -2,13 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PubSub } from 'graphql-subscriptions';
 import {
-  NEW_COOKED_ORDER,
+  NEW_PACKED_ORDER,
   NEW_ORDER_UPDATE,
   NEW_PENDING_ORDER,
   PUB_SUB,
 } from 'src/common/common.constants';
-import { Dish } from 'src/restaurants/entities/dish.entity';
-import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
+import { Product } from 'src/stores/entities/product.entity';
+import { Store } from 'src/stores/entities/store.entity';
 import { User, UserRole } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { CreateOrderInput, CreateOrderOutput } from './dtos/create-order.dto';
@@ -26,59 +26,59 @@ export class OrderService {
     private readonly orders: Repository<Order>,
     @InjectRepository(OrderItem)
     private readonly orderItems: Repository<OrderItem>,
-    @InjectRepository(Restaurant)
-    private readonly restaurants: Repository<Restaurant>,
-    @InjectRepository(Dish)
-    private readonly dishes: Repository<Dish>,
+    @InjectRepository(Store)
+    private readonly stores: Repository<Store>,
+    @InjectRepository(Product)
+    private readonly products: Repository<Product>,
     @Inject(PUB_SUB) private readonly pubSub: PubSub,
   ) {}
 
   async createOrder(
     customer: User,
-    { restaurantId, items }: CreateOrderInput,
+    { storeId, items }: CreateOrderInput,
   ): Promise<CreateOrderOutput> {
     try {
-      const restaurant = await this.restaurants.findOne(restaurantId);
-      if (!restaurant) {
+      const store = await this.stores.findOne(storeId);
+      if (!store) {
         return {
           ok: false,
-          error: 'Restaurant not found',
+          error: 'Store not found',
         };
       }
       let orderFinalPrice = 0;
       const orderItems: OrderItem[] = [];
       for (const item of items) {
-        const dish = await this.dishes.findOne(item.dishId);
-        if (!dish) {
+        const product = await this.products.findOne(item.productId);
+        if (!product) {
           return {
             ok: false,
-            error: 'Dish not found.',
+            error: 'Product not found.',
           };
         }
-        let dishFinalPrice = dish.price;
+        let productFinalPrice = product.price;
         for (const itemOption of item.options) {
-          const dishOption = dish.options.find(
-            dishOption => dishOption.name === itemOption.name,
+          const productOption = product.options.find(
+            productOption => productOption.name === itemOption.name,
           );
-          if (dishOption) {
-            if (dishOption.extra) {
-              dishFinalPrice = dishFinalPrice + dishOption.extra;
+          if (productOption) {
+            if (productOption.extra) {
+              productFinalPrice = productFinalPrice + productOption.extra;
             } else {
-              const dishOptionChoice = dishOption.choices?.find(
+              const productOptionChoice = productOption.choices?.find(
                 optionChoice => optionChoice.name === itemOption.choice,
               );
-              if (dishOptionChoice) {
-                if (dishOptionChoice.extra) {
-                  dishFinalPrice = dishFinalPrice + dishOptionChoice.extra;
+              if (productOptionChoice) {
+                if (productOptionChoice.extra) {
+                  productFinalPrice = productFinalPrice + productOptionChoice.extra;
                 }
               }
             }
           }
         }
-        orderFinalPrice = orderFinalPrice + dishFinalPrice;
+        orderFinalPrice = orderFinalPrice + productFinalPrice;
         const orderItem = await this.orderItems.save(
           this.orderItems.create({
-            dish,
+            product,
             options: item.options,
           }),
         );
@@ -87,13 +87,13 @@ export class OrderService {
       const order = await this.orders.save(
         this.orders.create({
           customer,
-          restaurant,
+          store,
           total: orderFinalPrice,
           items: orderItems,
         }),
       );
       await this.pubSub.publish(NEW_PENDING_ORDER, {
-        pendingOrders: { order, ownerId: restaurant.ownerId },
+        pendingOrders: { order, ownerId: store.ownerId },
       });
       return {
         ok: true,
@@ -129,13 +129,13 @@ export class OrderService {
           },
         });
       } else if (user.role === UserRole.Owner) {
-        const restaurants = await this.restaurants.find({
+        const stores = await this.stores.find({
           where: {
             owner: user,
           },
           relations: ['orders'],
         });
-        orders = restaurants.map(restaurant => restaurant.orders).flat(1);
+        orders = stores.map(store => store.orders).flat(1);
         if (status) {
           orders = orders.filter(order => order.status === status);
         }
@@ -160,7 +160,7 @@ export class OrderService {
     if (user.role === UserRole.Delivery && order.driverId !== user.id) {
       canSee = false;
     }
-    if (user.role === UserRole.Owner && order.restaurant.ownerId !== user.id) {
+    if (user.role === UserRole.Owner && order.store.ownerId !== user.id) {
       canSee = false;
     }
     return canSee;
@@ -172,7 +172,7 @@ export class OrderService {
   ): Promise<GetOrderOutput> {
     try {
       const order = await this.orders.findOne(orderId, {
-        relations: ['restaurant'],
+        relations: ['store'],
       });
       if (!order) {
         return {
@@ -222,7 +222,7 @@ export class OrderService {
         canEdit = false;
       }
       if (user.role === UserRole.Owner) {
-        if (status !== OrderStatus.Cooking && status !== OrderStatus.Cooked) {
+        if (status !== OrderStatus.Packing && status !== OrderStatus.Packed) {
           canEdit = false;
         }
       }
@@ -246,9 +246,9 @@ export class OrderService {
       });
       const newOrder = { ...order, status };
       if (user.role === UserRole.Owner) {
-        if (status === OrderStatus.Cooked) {
-          await this.pubSub.publish(NEW_COOKED_ORDER, {
-            cookedOrders: newOrder,
+        if (status === OrderStatus.Packed) {
+          await this.pubSub.publish(NEW_PACKED_ORDER, {
+            packedOrders: newOrder,
           });
         }
       }

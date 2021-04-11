@@ -5,7 +5,7 @@ import { Payment } from '../entities/payment.entity';
 @InputType()
 export class CreatePaymentInput extends PickType(Payment, [
   'transactionId',
-  'restaurantId',
+  'storeId',
 ]) {}
 
 @ObjectType()

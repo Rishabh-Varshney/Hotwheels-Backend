@@ -2,32 +2,32 @@ import { Field, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { IsNumber, IsString, Length } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Column, Entity, ManyToOne, RelationId } from 'typeorm';
-import { Restaurant } from './restaurant.entity';
+import { Store } from './store.entity';
 
-@InputType('DishChoiceInputType', { isAbstract: true })
+@InputType('ProductChoiceInputType', { isAbstract: true })
 @ObjectType()
-class DishChoice {
+class ProductChoice {
   @Field(type => String)
   name: string;
   @Field(type => Int, { nullable: true })
   extra?: number;
 }
 
-@InputType('DishOptionInputType', { isAbstract: true })
+@InputType('ProductOptionInputType', { isAbstract: true })
 @ObjectType()
-export class DishOption {
+export class ProductOption {
   @Field(type => String)
   name: string;
-  @Field(type => [DishChoice], { nullable: true })
-  choices?: DishChoice[];
+  @Field(type => [ProductChoice], { nullable: true })
+  choices?: ProductChoice[];
   @Field(type => Int, { nullable: true })
   extra?: number;
 }
 
-@InputType('DishInputType', { isAbstract: true })
+@InputType('ProductInputType', { isAbstract: true })
 @ObjectType()
 @Entity()
-export class Dish extends CoreEntity {
+export class Product extends CoreEntity {
   @Field(type => String)
   @Column()
   @IsString()
@@ -49,18 +49,18 @@ export class Dish extends CoreEntity {
   @Length(5, 140)
   description: string;
 
-  @Field(type => Restaurant)
+  @Field(type => Store)
   @ManyToOne(
-    type => Restaurant,
-    restaurant => restaurant.menu,
+    type => Store,
+    store => store.menu,
     { onDelete: 'CASCADE' },
   )
-  restaurant: Restaurant;
+  store: Store;
 
-  @RelationId((dish: Dish) => dish.restaurant)
-  restaurantId: number;
+  @RelationId((product: Product) => product.store)
+  storeId: number;
 
-  @Field(type => [DishOption], { nullable: true })
+  @Field(type => [ProductOption], { nullable: true })
   @Column({ type: 'json', nullable: true })
-  options?: DishOption[];
+  options?: ProductOption[];
 }

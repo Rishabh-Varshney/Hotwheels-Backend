@@ -6,7 +6,7 @@ import { OrderItemOption } from '../entities/order-item.entity';
 @InputType()
 class CreateOrderItemInput {
   @Field(type => Int)
-  dishId: number;
+  productId: number;
 
   @Field(type => [OrderItemOption], { nullable: true })
   options?: OrderItemOption[];
@@ -15,7 +15,7 @@ class CreateOrderItemInput {
 @InputType()
 export class CreateOrderInput {
   @Field(type => Int)
-  restaurantId: number;
+  storeId: number;
 
   @Field(type => [CreateOrderItemInput])
   items: CreateOrderItemInput[];
