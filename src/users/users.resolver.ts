@@ -68,6 +68,4 @@ export class UserResolver {
   ): Promise<VerifyEmailOutput> {
     return this.usersService.verifyEmail(code);
   }
-
-  
 }
