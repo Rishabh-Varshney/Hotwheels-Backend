@@ -34,6 +34,12 @@ import { Category } from './entities/category.entity';
 import { Product } from './entities/product.entity';
 import { Store } from './entities/store.entity';
 import { Storeservice } from './stores.service';
+import {
+  SearchProductInput,
+  SearchProductOutput,
+} from './dtos/serach-product.dto';
+import { ProductInput, ProductOutput } from './dtos/product.dto';
+import { ProductsInput, ProductsOutput } from './dtos/products.dto';
 
 @Resolver((of) => Store)
 export class StoreResolver {
@@ -105,7 +111,7 @@ export class CategoryResolver {
 
   @ResolveField((type) => Int)
   storeCount(@Parent() category: Category): Promise<number> {
-    return this.storeservice.countStores(category);
+    return this.storeservice.countProducts(category);
   }
 
   @Query((type) => AllCategoriesOutput)
@@ -150,5 +156,24 @@ export class ProductResolver {
     @Args('input') deleteProductInput: DeleteProductInput,
   ): Promise<DeleteProductOutput> {
     return this.storeservice.deleteProduct(owner, deleteProductInput);
+  }
+
+  @Query((returns) => SearchProductOutput)
+  searchProduct(
+    @Args('input') searchProductInput: SearchProductInput,
+  ): Promise<SearchProductOutput> {
+    return this.storeservice.searchProductByName(searchProductInput);
+  }
+
+  @Query((returns) => ProductOutput)
+  product(@Args('input') productInput: ProductInput): Promise<ProductOutput> {
+    return this.storeservice.findProductById(productInput);
+  }
+
+  @Query((returns) => ProductsOutput)
+  products(
+    @Args('input') productsInput: ProductsInput,
+  ): Promise<ProductsOutput> {
+    return this.storeservice.allProducts(productsInput);
   }
 }

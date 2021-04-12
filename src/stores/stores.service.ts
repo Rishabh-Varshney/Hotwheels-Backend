@@ -4,33 +4,33 @@ import { User } from 'src/users/entities/user.entity';
 import { Like, Raw, Repository } from 'typeorm';
 import { AllCategoriesOutput } from './dtos/all-categories.dto';
 import { CategoryInput, CategoryOutput } from './dtos/category.dto';
-import { CreateProductInput, CreateProductOutput } from './dtos/create-product.dto';
 import {
-  CreateStoreInput,
-  CreateStoreOutput,
-} from './dtos/create-store.dto';
-import { DeleteProductInput, DeleteProductOutput } from './dtos/delete-product.dto';
+  CreateProductInput,
+  CreateProductOutput,
+} from './dtos/create-product.dto';
+import { CreateStoreInput, CreateStoreOutput } from './dtos/create-store.dto';
 import {
-  DeleteStoreInput,
-  DeleteStoreOutput,
-} from './dtos/delete-store.dto';
+  DeleteProductInput,
+  DeleteProductOutput,
+} from './dtos/delete-product.dto';
+import { DeleteStoreInput, DeleteStoreOutput } from './dtos/delete-store.dto';
 import { EditProductInput, EditProductOutput } from './dtos/edit-product.dto';
-import {
-  EditStoreInput,
-  EditStoreOutput,
-} from './dtos/edit-store.dto';
+import { EditStoreInput, EditStoreOutput } from './dtos/edit-store.dto';
 import { MyStoreInput, MyStoreOutput } from './dtos/my-store';
 import { MyStoresOutput } from './dtos/my-stores.dto';
 import { StoreInput, StoreOutput } from './dtos/store.dto';
 import { StoresInput, StoresOutput } from './dtos/stores.dto';
-import {
-  SearchStoreInput,
-  SearchStoreOutput,
-} from './dtos/search-store.dto';
+import { SearchStoreInput, SearchStoreOutput } from './dtos/search-store.dto';
 import { Category } from './entities/category.entity';
 import { Product } from './entities/product.entity';
 import { Store } from './entities/store.entity';
 import { CategoryRepository } from './repositories/category.repository';
+import {
+  SearchProductInput,
+  SearchProductOutput,
+} from './dtos/serach-product.dto';
+import { ProductInput, ProductOutput } from './dtos/product.dto';
+import { ProductsInput, ProductsOutput } from './dtos/products.dto';
 
 @Injectable()
 export class Storeservice {
@@ -71,9 +71,7 @@ export class Storeservice {
     editStoreInput: EditStoreInput,
   ): Promise<EditStoreOutput> {
     try {
-      const store = await this.stores.findOne(
-        editStoreInput.storeId,
-      );
+      const store = await this.stores.findOne(editStoreInput.storeId);
       if (!store) {
         return {
           ok: false,
@@ -154,8 +152,8 @@ export class Storeservice {
       };
     }
   }
-  countStores(category: Category) {
-    return this.stores.count({ category });
+  countProducts(category: Category) {
+    return this.products.count({ category });
   }
   async findCategoryBySlug({
     slug,
@@ -169,20 +167,17 @@ export class Storeservice {
           error: 'Category not found',
         };
       }
-      const stores = await this.stores.find({
+      const products = await this.products.find({
         where: {
           category,
-        },
-        order: {
-          isPromoted: 'DESC',
         },
         take: 25,
         skip: (page - 1) * 25,
       });
-      const totalResults = await this.countStores(category);
+      const totalResults = await this.countProducts(category);
       return {
         ok: true,
-        stores,
+        products,
         category,
         totalPages: Math.ceil(totalResults / 25),
       };
@@ -217,9 +212,7 @@ export class Storeservice {
     }
   }
 
-  async findStoreById({
-    storeId,
-  }: StoreInput): Promise<StoreOutput> {
+  async findStoreById({ storeId }: StoreInput): Promise<StoreOutput> {
     try {
       const store = await this.stores.findOne(storeId, {
         relations: ['menu'],
@@ -249,7 +242,7 @@ export class Storeservice {
     try {
       const [stores, totalResults] = await this.stores.findAndCount({
         where: {
-          name: Raw(name => `${name} ILIKE '%${query}%'`),
+          name: Raw((name) => `${name} ILIKE '%${query}%'`),
         },
         skip: (page - 1) * 25,
         take: 25,
@@ -270,9 +263,7 @@ export class Storeservice {
     createProductInput: CreateProductInput,
   ): Promise<CreateProductOutput> {
     try {
-      const store = await this.stores.findOne(
-        createProductInput.storeId,
-      );
+      const store = await this.stores.findOne(createProductInput.storeId);
       if (!store) {
         return {
           ok: false,
@@ -285,11 +276,20 @@ export class Storeservice {
           error: "You can't do that.",
         };
       }
-      await this.products.save(
-        this.products.create({ ...createProductInput, store }),
+      const newProduct = await this.products.create({
+        ...createProductInput,
+        store,
+      });
+
+      const category = await this.categories.getOrCreate(
+        createProductInput.categoryName,
       );
+      newProduct.category = category;
+
+      await this.products.save(newProduct);
       return {
         ok: true,
+        productId: newProduct.id,
       };
     } catch (error) {
       console.log(error);
@@ -322,10 +322,17 @@ export class Storeservice {
           error: "You can't do that.",
         };
       }
+      let category: Category = null;
+      if (editProductInput.categoryName) {
+        category = await this.categories.getOrCreate(
+          editProductInput.categoryName,
+        );
+      }
       await this.products.save([
         {
           id: editProductInput.productId,
           ...editProductInput,
+          ...(category && { category }),
         },
       ]);
       return {
@@ -371,6 +378,30 @@ export class Storeservice {
     }
   }
 
+  async searchProductByName({
+    query,
+    page,
+  }: SearchProductInput): Promise<SearchProductOutput> {
+    try {
+      const [products, totalResults] = await this.products.findAndCount({
+        where: {
+          name: Raw((name) => `${name} ILIKE '%${query}%'`),
+        },
+        relations: ['store'],
+        skip: (page - 1) * 25,
+        take: 25,
+      });
+      return {
+        ok: true,
+        products,
+        totalResults,
+        totalPages: Math.ceil(totalResults / 25),
+      };
+    } catch {
+      return { ok: false, error: 'Could not search for products' };
+    }
+  }
+
   async myStores(owner: User): Promise<MyStoresOutput> {
     try {
       const stores = await this.stores.find({ owner });
@@ -385,10 +416,7 @@ export class Storeservice {
       };
     }
   }
-  async myStore(
-    owner: User,
-    { id }: MyStoreInput,
-  ): Promise<MyStoreOutput> {
+  async myStore(owner: User, { id }: MyStoreInput): Promise<MyStoreOutput> {
     try {
       const store = await this.stores.findOne(
         { owner, id },
@@ -402,6 +430,49 @@ export class Storeservice {
       return {
         ok: false,
         error: 'Could not find store',
+      };
+    }
+  }
+
+  async findProductById({ productId }: ProductInput): Promise<ProductOutput> {
+    try {
+      const product = await this.products.findOne(productId, {
+        relations: ['store'],
+      });
+      if (!product) {
+        return {
+          ok: false,
+          error: 'Product not found',
+        };
+      }
+      return {
+        ok: true,
+        product,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not find product',
+      };
+    }
+  }
+
+  async allProducts({ page }: ProductsInput): Promise<ProductsOutput> {
+    try {
+      const [products, totalResults] = await this.products.findAndCount({
+        skip: (page - 1) * 3,
+        take: 3,
+      });
+      return {
+        ok: true,
+        results: products,
+        totalPages: Math.ceil(totalResults / 3),
+        totalResults,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not load products',
       };
     }
   }

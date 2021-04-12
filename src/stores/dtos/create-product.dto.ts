@@ -9,9 +9,15 @@ export class CreateProductInput extends PickType(Product, [
   'description',
   'options',
 ]) {
-  @Field(type => Int)
+  @Field((type) => Int)
   storeId: number;
+
+  @Field((type) => String)
+  categoryName: string;
 }
 
 @ObjectType()
-export class CreateProductOutput extends CoreOutput {}
+export class CreateProductOutput extends CoreOutput {
+  @Field((type) => Int)
+  productId?: number;
+}

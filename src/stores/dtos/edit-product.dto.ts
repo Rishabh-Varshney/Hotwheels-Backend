@@ -6,6 +6,7 @@ import {
   PartialType,
   PickType,
 } from '@nestjs/graphql';
+import { IsOptional } from 'class-validator';
 import { CoreOutput } from 'src/common/dtos/output.dto';
 import { Product } from '../entities/product.entity';
 
@@ -16,8 +17,11 @@ export class EditProductInput extends PickType(PartialType(Product), [
   'price',
   'description',
 ]) {
-  @Field(type => Int)
+  @Field((type) => Int)
   productId: number;
+
+  @Field((type) => String, { nullable: true })
+  categoryName?: string;
 }
 
 @ObjectType()

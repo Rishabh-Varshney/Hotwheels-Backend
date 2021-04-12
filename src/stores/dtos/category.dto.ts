@@ -5,18 +5,18 @@ import {
   PaginationOutput,
 } from 'src/common/dtos/pagination.dto';
 import { Category } from '../entities/category.entity';
-import { Store } from '../entities/store.entity';
+import { Product } from '../entities/product.entity';
 
 @InputType()
 export class CategoryInput extends PaginationInput {
-  @Field(type => String)
+  @Field((type) => String)
   slug: string;
 }
 
 @ObjectType()
 export class CategoryOutput extends PaginationOutput {
-  @Field(type => [Store], { nullable: true })
-  stores?: Store[];
-  @Field(type => Category, { nullable: true })
+  @Field((type) => [Product], { nullable: true })
+  products?: Product[];
+  @Field((type) => Category, { nullable: true })
   category?: Category;
 }
