@@ -13,6 +13,8 @@ import { Verification } from './entities/verification.entity';
 import { VerifyEmailOutput } from './dtos/verify-email.dto';
 import { UserProfileOutput } from './dtos/user-profile.dto';
 import { MailService } from 'src/mail/mail.service';
+import { OTPInput, OTPOutput } from './dtos/otp.dto';
+import { boolean } from 'joi';
 
 @Injectable()
 export class UserService {
@@ -28,6 +30,7 @@ export class UserService {
     email,
     password,
     role,
+    location,
   }: CreateAccountInput): Promise<CreateAccountOutput> {
     try {
       const exists = await this.users.findOne({ email });
@@ -35,7 +38,7 @@ export class UserService {
         return { ok: false, error: 'There is a user with that email already' };
       }
       const user = await this.users.save(
-        this.users.create({ email, password, role }),
+        this.users.create({ email, password, role,location }),
       );
       const verification = await this.verifications.save(
         this.verifications.create({
@@ -68,11 +71,20 @@ export class UserService {
           error: 'Wrong password',
         };
       }
+      // const token = this.jwtService.sign(user.id);
 
-      const token = this.jwtService.sign(user.id);
+      const otp=Math.floor(100000 + Math.random() * 900000);
+      await this.users.save({
+          ...user,
+            otp,
+      });
+
+      const userId=user.id;
+      this.mailService.sendOtpEmail(email, `${otp}`);
+
       return {
         ok: true,
-        token,
+        userId: userId
       };
     } catch (error) {
       return {
@@ -96,7 +108,7 @@ export class UserService {
 
   async editProfile(
     userId: number,
-    { email, password }: EditProfileInput,
+    { email, password,location }: EditProfileInput,
   ): Promise<EditProfileOutput> {
     try {
       const user = await this.users.findOne(userId);
@@ -111,6 +123,9 @@ export class UserService {
       }
       if (password) {
         user.password = password;
+      }
+      if(location){
+        user.location=location;
       }
       await this.users.save(user);
       return {
@@ -138,4 +153,24 @@ export class UserService {
       return { ok: false, error: 'Could not verify email.' };
     }
   }
+
+  async verifyOtp({otp,id}:OTPInput): Promise<OTPOutput> {
+    try {
+      const user = await this.users.findOne(id);
+      
+      if (user) {
+        const temp=(user.otp===otp);
+        if(temp){
+            const token = this.jwtService.sign(user.id);
+            return {ok:temp,token};
+        }
+        return {ok:temp,error:"OTP Wrong"};
+      }
+
+      return { ok: false, error: 'User Not FOUND.' };
+    } catch (error) {
+      return { ok: false, error: 'Could not verify OTP.' };
+    }
+  }
+
 }
