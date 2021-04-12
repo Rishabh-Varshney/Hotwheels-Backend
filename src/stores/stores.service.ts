@@ -49,10 +49,10 @@ export class Storeservice {
     try {
       const newStore = this.stores.create(createStoreInput);
       newStore.owner = owner;
-      const category = await this.categories.getOrCreate(
-        createStoreInput.categoryName,
-      );
-      newStore.category = category;
+      // const category = await this.categories.getOrCreate(
+      //   createStoreInput.categoryName,
+      // );
+      // newStore.category = category;
       await this.stores.save(newStore);
       return {
         ok: true,
@@ -84,17 +84,17 @@ export class Storeservice {
           error: "You can't edit a store that you don't own",
         };
       }
-      let category: Category = null;
-      if (editStoreInput.categoryName) {
-        category = await this.categories.getOrCreate(
-          editStoreInput.categoryName,
-        );
-      }
+      // let category: Category = null;
+      // if (editStoreInput.categoryName) {
+      //   category = await this.categories.getOrCreate(
+      //     editStoreInput.categoryName,
+      //   );
+      // }
       await this.stores.save([
         {
           id: editStoreInput.storeId,
           ...editStoreInput,
-          ...(category && { category }),
+          // ...(category && { category }),
         },
       ]);
       return {
@@ -152,6 +152,7 @@ export class Storeservice {
       };
     }
   }
+
   countProducts(category: Category) {
     return this.products.count({ category });
   }

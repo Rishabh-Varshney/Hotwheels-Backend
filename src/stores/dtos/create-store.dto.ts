@@ -8,12 +8,12 @@ export class CreateStoreInput extends PickType(Store, [
   'coverImg',
   'address',
 ]) {
-  @Field(type => String)
-  categoryName: string;
+  // @Field(type => String)
+  // categoryName: string;
 }
 
 @ObjectType()
 export class CreateStoreOutput extends CoreOutput {
-  @Field(type => Int)
+  @Field((type) => Int)
   storeId?: number;
 }

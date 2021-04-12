@@ -26,9 +26,9 @@ export class Category extends CoreEntity {
   slug: string;
 
   //HATANA HAI BC TUJHE
-  @Field((type) => [Store], { nullable: true })
-  @OneToMany((type) => Store, (store) => store.category)
-  stores: Store[];
+  // @Field((type) => [Store], { nullable: true })
+  // @OneToMany((type) => Store, (store) => store.category)
+  // stores: Store[];
 
   @Field((type) => [Product], { nullable: true })
   @OneToMany((type) => Product, (product) => product.category)
