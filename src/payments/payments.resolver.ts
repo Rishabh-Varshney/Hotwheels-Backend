@@ -10,12 +10,12 @@ import { GetPaymentsOutput } from './dtos/get-payments.dto';
 import { Payment } from './entities/payment.entity';
 import { PaymentService } from './payments.service';
 
-@Resolver(of => Payment)
+@Resolver((of) => Payment)
 export class PaymentResolver {
   constructor(private readonly paymentService: PaymentService) {}
 
-  @Mutation(returns => CreatePaymentOuput)
-  @Role(['Owner'])
+  @Mutation((returns) => CreatePaymentOuput)
+  @Role(['Owner', 'Retailer'])
   createPayment(
     @AuthUser() owner: User,
     @Args('input') createPaymentInput: CreatePaymentInput,
@@ -23,8 +23,8 @@ export class PaymentResolver {
     return this.paymentService.createPayment(owner, createPaymentInput);
   }
 
-  @Query(returns => GetPaymentsOutput)
-  @Role(['Owner'])
+  @Query((returns) => GetPaymentsOutput)
+  @Role(['Owner', 'Retailer'])
   getPayments(@AuthUser() user: User): Promise<GetPaymentsOutput> {
     return this.paymentService.getPayments(user);
   }

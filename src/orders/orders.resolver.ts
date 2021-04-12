@@ -19,15 +19,15 @@ import { TakeOrderInput, TakeOrderOutput } from './dtos/take-order.dto';
 import { Order } from './entities/order.entity';
 import { OrderService } from './orders.service';
 
-@Resolver(of => Order)
+@Resolver((of) => Order)
 export class OrderResolver {
   constructor(
     private readonly ordersService: OrderService,
     @Inject(PUB_SUB) private readonly pubSub: PubSub,
   ) {}
 
-  @Mutation(returns => CreateOrderOutput)
-  @Role(['Client'])
+  @Mutation((returns) => CreateOrderOutput)
+  @Role(['Client', 'Retailer'])
   async createOrder(
     @AuthUser() customer: User,
     @Args('input')
@@ -36,7 +36,7 @@ export class OrderResolver {
     return this.ordersService.createOrder(customer, createOrderInput);
   }
 
-  @Query(returns => GetOrdersOutput)
+  @Query((returns) => GetOrdersOutput)
   @Role(['Any'])
   async getOrders(
     @AuthUser() user: User,
@@ -45,7 +45,7 @@ export class OrderResolver {
     return this.ordersService.getOrders(user, getOrdersInput);
   }
 
-  @Query(returns => GetOrderOutput)
+  @Query((returns) => GetOrderOutput)
   @Role(['Any'])
   async getOrder(
     @AuthUser() user: User,
@@ -54,7 +54,7 @@ export class OrderResolver {
     return this.ordersService.getOrder(user, getOrderInput);
   }
 
-  @Mutation(returns => EditOrderOutput)
+  @Mutation((returns) => EditOrderOutput)
   @Role(['Any'])
   async editOrder(
     @AuthUser() user: User,
@@ -63,24 +63,24 @@ export class OrderResolver {
     return this.ordersService.editOrder(user, editOrderInput);
   }
 
-  @Subscription(returns => Order, {
+  @Subscription((returns) => Order, {
     filter: ({ pendingOrders: { ownerId } }, _, { user }) => {
       return ownerId === user.id;
     },
     resolve: ({ pendingOrders: { order } }) => order,
   })
-  @Role(['Owner'])
+  @Role(['Owner', 'Retailer'])
   pendingOrders() {
     return this.pubSub.asyncIterator(NEW_PENDING_ORDER);
   }
 
-  @Subscription(returns => Order)
+  @Subscription((returns) => Order)
   @Role(['Delivery'])
   packedOrders() {
     return this.pubSub.asyncIterator(NEW_PACKED_ORDER);
   }
 
-  @Subscription(returns => Order, {
+  @Subscription((returns) => Order, {
     filter: (
       { orderUpdates: order }: { orderUpdates: Order },
       { input }: { input: OrderUpdatesInput },
@@ -101,7 +101,7 @@ export class OrderResolver {
     return this.pubSub.asyncIterator(NEW_ORDER_UPDATE);
   }
 
-  @Mutation(returns => TakeOrderOutput)
+  @Mutation((returns) => TakeOrderOutput)
   @Role(['Delivery'])
   takeOrder(
     @AuthUser() driver: User,
