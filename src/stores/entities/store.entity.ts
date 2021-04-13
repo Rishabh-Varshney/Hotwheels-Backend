@@ -1,4 +1,5 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
+import { Json } from 'aws-sdk/clients/robomaker';
 import { IsString, Length } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Order } from 'src/orders/entities/order.entity';
@@ -7,6 +8,14 @@ import { Column, Entity, ManyToOne, OneToMany, RelationId } from 'typeorm';
 import { Category } from './category.entity';
 import { Product } from './product.entity';
 
+@InputType('lntLngStoreType')
+@ObjectType()
+export class latLng {
+  @Field((type) => Number, { defaultValue: 40.639751 })
+  lat: number;
+  @Field((type) => Number, { defaultValue: -73.778925 })
+  lng: number;
+}
 @InputType('StoreInputType', { isAbstract: true })
 @ObjectType()
 @Entity()
@@ -26,6 +35,21 @@ export class Store extends CoreEntity {
   @Column()
   @IsString()
   address: string;
+
+  @Field((type) => latLng, {
+    defaultValue: {
+      lat: 40.639751,
+      lng: -73.778925,
+    },
+  })
+  @Column({
+    type: 'json',
+    default: {
+      lat: 40.639751,
+      lng: -73.778925,
+    },
+  })
+  _geoloc?: latLng;
 
   //HATANA HAI BC TUJHE
   // @Field((type) => Category, { nullable: true })

@@ -7,6 +7,7 @@ export class CreateStoreInput extends PickType(Store, [
   'name',
   'coverImg',
   'address',
+  '_geoloc',
 ]) {
   // @Field(type => String)
   // categoryName: string;

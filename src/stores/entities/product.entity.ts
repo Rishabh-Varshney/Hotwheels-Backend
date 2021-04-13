@@ -3,7 +3,7 @@ import { IsNumber, IsString, Length } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Column, Entity, ManyToOne, RelationId } from 'typeorm';
 import { Category } from './category.entity';
-import { Store } from './store.entity';
+import { latLng, Store } from './store.entity';
 
 @InputType('ProductChoiceInputType', { isAbstract: true })
 @ObjectType()
@@ -77,4 +77,19 @@ export class Product extends CoreEntity {
   @Field((type) => String, { defaultValue: 'Today' })
   @Column({ default: 'Today' })
   dateNextAvailable: string;
+
+  @Field((type) => latLng, {
+    defaultValue: {
+      lat: 40.639751,
+      lng: -73.778925,
+    },
+  })
+  @Column({
+    type: 'json',
+    default: {
+      lat: 40.639751,
+      lng: -73.778925,
+    },
+  })
+  _geoloc?: latLng;
 }

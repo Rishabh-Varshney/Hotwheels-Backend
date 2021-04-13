@@ -32,6 +32,7 @@ import {
 import { ProductInput, ProductOutput } from './dtos/product.dto';
 import { ProductsInput, ProductsOutput } from './dtos/products.dto';
 
+import algoliasearch from 'algoliasearch';
 @Injectable()
 export class Storeservice {
   constructor(
@@ -41,6 +42,9 @@ export class Storeservice {
     private readonly products: Repository<Product>,
     private readonly categories: CategoryRepository,
   ) {}
+
+  client = algoliasearch(process.env.ALGOLIA_KEY, process.env.ALGOLIA_SECRET);
+  index = this.client.initIndex(process.env.ALGOLIA_INDEX);
 
   async createStore(
     owner: User,
@@ -282,12 +286,20 @@ export class Storeservice {
         store,
       });
 
+      newProduct._geoloc = store._geoloc;
+
       const category = await this.categories.getOrCreate(
         createProductInput.categoryName,
       );
       newProduct.category = category;
 
       await this.products.save(newProduct);
+
+      //Algolia
+      this.index.saveObject(newProduct, {
+        autoGenerateObjectIDIfNotExist: true,
+      });
+
       return {
         ok: true,
         productId: newProduct.id,
@@ -309,7 +321,7 @@ export class Storeservice {
   ): Promise<EditProductOutput> {
     try {
       const product = await this.products.findOne(editProductInput.productId, {
-        relations: ['store'],
+        relations: ['store', 'category'],
       });
       if (!product) {
         return {
@@ -336,6 +348,21 @@ export class Storeservice {
           ...(category && { category }),
         },
       ]);
+      //Algolia
+      await this.index.deleteBy({
+        filters: `id:${editProductInput.productId}`,
+      });
+
+      const afterEditProduct = await this.products.findOne(
+        editProductInput.productId,
+        {
+          relations: ['store', 'category'],
+        },
+      );
+
+      await this.index.saveObject(afterEditProduct, {
+        autoGenerateObjectIDIfNotExist: true,
+      });
       return {
         ok: true,
       };
@@ -392,6 +419,18 @@ export class Storeservice {
         skip: (page - 1) * 25,
         take: 25,
       });
+
+      //Demo code for filtering through location
+      // const blabla = await this.index
+      //   .search('', {
+      //     aroundLatLng: '80.71, 95.01',
+      //   })
+      //   .then(({ hits }) => {
+      //     return hits;
+      //   });
+
+      // console.log(Object.keys(blabla).length);
+
       return {
         ok: true,
         products,
@@ -464,6 +503,7 @@ export class Storeservice {
         skip: (page - 1) * 3,
         take: 3,
       });
+
       return {
         ok: true,
         results: products,
