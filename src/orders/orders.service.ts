@@ -45,6 +45,17 @@ export class OrderService {
           error: 'Store not found',
         };
       }
+
+      for (const item of items) {
+        const product = await this.products.findOne(item.productId);
+        if (product.stocks < item.quantity) {
+          return {
+            ok: false,
+            error: 'Some Product Quantity Not Available.',
+          };
+        }
+      }
+
       let orderFinalPrice = 0;
       const orderItems: OrderItem[] = [];
       for (const item of items) {
@@ -55,26 +66,32 @@ export class OrderService {
             error: 'Product not found.',
           };
         }
-        let productFinalPrice = product.price;
+        let productFinalPrice = product.price * item.quantity;
+
+        //LITE CODE
         for (const itemOption of item.options) {
           const productOption = product.options.find(
-            productOption => productOption.name === itemOption.name,
+            (productOption) => productOption.name === itemOption.name,
           );
           if (productOption) {
             if (productOption.extra) {
               productFinalPrice = productFinalPrice + productOption.extra;
             } else {
               const productOptionChoice = productOption.choices?.find(
-                optionChoice => optionChoice.name === itemOption.choice,
+                (optionChoice) => optionChoice.name === itemOption.choice,
               );
               if (productOptionChoice) {
                 if (productOptionChoice.extra) {
-                  productFinalPrice = productFinalPrice + productOptionChoice.extra;
+                  productFinalPrice =
+                    productFinalPrice + productOptionChoice.extra;
                 }
               }
             }
           }
         }
+        product.stocks -= item.quantity;
+        await this.products.save(product);
+
         orderFinalPrice = orderFinalPrice + productFinalPrice;
         const orderItem = await this.orderItems.save(
           this.orderItems.create({
@@ -135,9 +152,9 @@ export class OrderService {
           },
           relations: ['orders'],
         });
-        orders = stores.map(store => store.orders).flat(1);
+        orders = stores.map((store) => store.orders).flat(1);
         if (status) {
-          orders = orders.filter(order => order.status === status);
+          orders = orders.filter((order) => order.status === status);
         }
       }
       return {

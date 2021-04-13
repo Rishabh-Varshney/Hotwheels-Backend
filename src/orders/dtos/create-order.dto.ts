@@ -5,24 +5,27 @@ import { OrderItemOption } from '../entities/order-item.entity';
 
 @InputType()
 class CreateOrderItemInput {
-  @Field(type => Int)
+  @Field((type) => Int)
   productId: number;
 
-  @Field(type => [OrderItemOption], { nullable: true })
+  @Field((type) => [OrderItemOption], { nullable: true })
   options?: OrderItemOption[];
+
+  @Field((type) => Int)
+  quantity?: number;
 }
 
 @InputType()
 export class CreateOrderInput {
-  @Field(type => Int)
+  @Field((type) => Int)
   storeId: number;
 
-  @Field(type => [CreateOrderItemInput])
+  @Field((type) => [CreateOrderItemInput])
   items: CreateOrderItemInput[];
 }
 
 @ObjectType()
 export class CreateOrderOutput extends CoreOutput {
-  @Field(type => Int, { nullable: true })
+  @Field((type) => Int, { nullable: true })
   orderId?: number;
 }

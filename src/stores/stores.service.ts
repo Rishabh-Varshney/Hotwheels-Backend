@@ -28,7 +28,7 @@ import { CategoryRepository } from './repositories/category.repository';
 import {
   SearchProductInput,
   SearchProductOutput,
-} from './dtos/serach-product.dto';
+} from './dtos/search-product.dto';
 import { ProductInput, ProductOutput } from './dtos/product.dto';
 import { ProductsInput, ProductsOutput } from './dtos/products.dto';
 

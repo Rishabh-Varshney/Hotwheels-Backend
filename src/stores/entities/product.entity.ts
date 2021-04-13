@@ -68,4 +68,13 @@ export class Product extends CoreEntity {
     eager: true,
   })
   category: Category;
+
+  @Field((type) => Int, { defaultValue: 0 })
+  @Column({ default: 0 })
+  @IsNumber()
+  stocks: number;
+
+  @Field((type) => String, { defaultValue: 'Today' })
+  @Column({ default: 'Today' })
+  dateNextAvailable: string;
 }

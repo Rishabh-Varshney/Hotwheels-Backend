@@ -37,7 +37,7 @@ import { Storeservice } from './stores.service';
 import {
   SearchProductInput,
   SearchProductOutput,
-} from './dtos/serach-product.dto';
+} from './dtos/search-product.dto';
 import { ProductInput, ProductOutput } from './dtos/product.dto';
 import { ProductsInput, ProductsOutput } from './dtos/products.dto';
 
@@ -110,7 +110,7 @@ export class CategoryResolver {
   constructor(private readonly storeservice: Storeservice) {}
 
   @ResolveField((type) => Int)
-  storeCount(@Parent() category: Category): Promise<number> {
+  productCount(@Parent() category: Category): Promise<number> {
     return this.storeservice.countProducts(category);
   }
 
@@ -175,5 +175,12 @@ export class ProductResolver {
     @Args('input') productsInput: ProductsInput,
   ): Promise<ProductsOutput> {
     return this.storeservice.allProducts(productsInput);
+  }
+
+  @Query((returns) => SearchStoreOutput)
+  searchStore(
+    @Args('input') searchStoreInput: SearchStoreInput,
+  ): Promise<SearchStoreOutput> {
+    return this.storeservice.searchStoreByName(searchStoreInput);
   }
 }

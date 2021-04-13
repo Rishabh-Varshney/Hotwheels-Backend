@@ -9,6 +9,7 @@ export class CreateProductInput extends PickType(Product, [
   'description',
   'options',
   'photo',
+  'stocks',
 ]) {
   @Field((type) => Int)
   storeId: number;
