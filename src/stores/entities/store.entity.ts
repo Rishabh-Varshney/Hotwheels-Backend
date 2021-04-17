@@ -61,7 +61,10 @@ export class Store extends CoreEntity {
   // category: Category;
 
   @Field((type) => User)
-  @ManyToOne((type) => User, (user) => user.stores, { onDelete: 'CASCADE' })
+  @ManyToOne((type) => User, (user) => user.stores, {
+    onDelete: 'CASCADE',
+    eager: true,
+  })
   owner: User;
 
   @RelationId((store: Store) => store.owner)

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import algoliasearch from 'algoliasearch';
 import { PubSub } from 'graphql-subscriptions';
 import {
   NEW_PACKED_ORDER,
@@ -32,6 +33,9 @@ export class OrderService {
     private readonly products: Repository<Product>,
     @Inject(PUB_SUB) private readonly pubSub: PubSub,
   ) {}
+
+  client = algoliasearch(process.env.ALGOLIA_KEY, process.env.ALGOLIA_SECRET);
+  index = this.client.initIndex(process.env.ALGOLIA_INDEX);
 
   async createOrder(
     customer: User,
@@ -68,35 +72,23 @@ export class OrderService {
         }
         let productFinalPrice = product.price * item.quantity;
 
-        //LITE CODE
-        for (const itemOption of item.options) {
-          const productOption = product.options.find(
-            (productOption) => productOption.name === itemOption.name,
-          );
-          if (productOption) {
-            if (productOption.extra) {
-              productFinalPrice = productFinalPrice + productOption.extra;
-            } else {
-              const productOptionChoice = productOption.choices?.find(
-                (optionChoice) => optionChoice.name === itemOption.choice,
-              );
-              if (productOptionChoice) {
-                if (productOptionChoice.extra) {
-                  productFinalPrice =
-                    productFinalPrice + productOptionChoice.extra;
-                }
-              }
-            }
-          }
-        }
         product.stocks -= item.quantity;
         await this.products.save(product);
+
+        //ALGOLIA
+        await this.index.deleteBy({
+          filters: `id:${product.id}`,
+        });
+
+        await this.index.saveObject(product, {
+          autoGenerateObjectIDIfNotExist: true,
+        });
 
         orderFinalPrice = orderFinalPrice + productFinalPrice;
         const orderItem = await this.orderItems.save(
           this.orderItems.create({
             product,
-            options: item.options,
+            // options: item.options,
           }),
         );
         orderItems.push(orderItem);
@@ -156,6 +148,25 @@ export class OrderService {
         if (status) {
           orders = orders.filter((order) => order.status === status);
         }
+      } else if (user.role === UserRole.Retailer) {
+        const stores = await this.stores.find({
+          where: {
+            owner: user,
+          },
+          relations: ['orders'],
+        });
+        orders = await this.orders.find({
+          where: {
+            customer: user,
+            ...(status && { status }),
+          },
+        });
+        let brands = stores.map((store) => store.orders).flat(1);
+        if (status) {
+          brands = brands.filter((order) => order.status === status);
+        }
+
+        orders = orders.concat(brands);
       }
       return {
         ok: true,
@@ -180,6 +191,16 @@ export class OrderService {
     if (user.role === UserRole.Owner && order.store.ownerId !== user.id) {
       canSee = false;
     }
+
+    if (user.role === UserRole.Retailer && order.customerId !== user.id) {
+      canSee = false;
+    } else if (
+      user.role === UserRole.Retailer &&
+      order.store.ownerId !== user.id
+    ) {
+      canSee = false;
+    }
+
     return canSee;
   }
 
@@ -238,6 +259,17 @@ export class OrderService {
       if (user.role === UserRole.Client) {
         canEdit = false;
       }
+
+      if (user.role === UserRole.Retailer) {
+        if (order.customerId !== user.id) {
+          canEdit = false;
+        } else if (order.store.ownerId !== user.id) {
+          if (status !== OrderStatus.Packing && status !== OrderStatus.Packed) {
+            canEdit = false;
+          }
+        }
+      }
+
       if (user.role === UserRole.Owner) {
         if (status !== OrderStatus.Packing && status !== OrderStatus.Packed) {
           canEdit = false;

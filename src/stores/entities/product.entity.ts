@@ -51,7 +51,10 @@ export class Product extends CoreEntity {
   description: string;
 
   @Field((type) => Store)
-  @ManyToOne((type) => Store, (store) => store.menu, { onDelete: 'CASCADE' })
+  @ManyToOne((type) => Store, (store) => store.menu, {
+    onDelete: 'CASCADE',
+    eager: true,
+  })
   store: Store;
 
   @RelationId((product: Product) => product.store)
