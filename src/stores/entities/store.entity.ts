@@ -10,7 +10,7 @@ import { Product } from './product.entity';
 
 @InputType('lntLngStoreType')
 @ObjectType()
-export class latLng {
+export class latLngStore {
   @Field((type) => Number, { defaultValue: 40.639751 })
   lat: number;
   @Field((type) => Number, { defaultValue: -73.778925 })
@@ -36,7 +36,7 @@ export class Store extends CoreEntity {
   @IsString()
   address: string;
 
-  @Field((type) => latLng, {
+  @Field((type) => latLngStore, {
     defaultValue: {
       lat: 40.639751,
       lng: -73.778925,
@@ -49,7 +49,7 @@ export class Store extends CoreEntity {
       lng: -73.778925,
     },
   })
-  _geoloc?: latLng;
+  _geoloc?: latLngStore;
 
   @Field((type) => User)
   @ManyToOne((type) => User, (user) => user.stores, {

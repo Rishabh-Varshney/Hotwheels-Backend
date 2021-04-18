@@ -161,10 +161,10 @@ export class Storeservice {
   countProducts(category: Category) {
     return this.products.count({ category });
   }
-  async findCategoryBySlug({
-    slug,
-    page,
-  }: CategoryInput): Promise<CategoryOutput> {
+  async findCategoryBySlug(
+    { slug, page }: CategoryInput,
+    user: User,
+  ): Promise<CategoryOutput> {
     try {
       const category = await this.categories.findOne({ slug });
       if (!category) {
@@ -173,19 +173,35 @@ export class Storeservice {
           error: 'Category not found',
         };
       }
-      const products = await this.products.find({
-        where: {
-          category,
-        },
-        take: 25,
-        skip: (page - 1) * 25,
-      });
-      const totalResults = await this.countProducts(category);
+      let products;
+      if (user.role === UserRole.Client) {
+        products = await this.products.find({
+          take: 25,
+          skip: (page - 1) * 25,
+          relations: ['store'],
+          where: {
+            productRole: UserRole.Retailer,
+            category,
+          },
+        });
+      } else if (user.role === UserRole.Retailer) {
+        products = await this.products.find({
+          take: 25,
+          skip: (page - 1) * 25,
+          relations: ['store'],
+          where: {
+            productRole: UserRole.Owner,
+            category,
+          },
+        });
+      }
+      const totalResults = products.length;
       return {
         ok: true,
         products,
         category,
         totalPages: Math.ceil(totalResults / 25),
+        totalResults,
       };
     } catch {
       return {
@@ -409,19 +425,33 @@ export class Storeservice {
     }
   }
 
-  async searchProductByName({
-    query,
-    page,
-  }: SearchProductInput): Promise<SearchProductOutput> {
+  async searchProductByName(
+    { query, page }: SearchProductInput,
+    user: User,
+  ): Promise<SearchProductOutput> {
     try {
-      const [products, totalResults] = await this.products.findAndCount({
-        where: {
-          name: Raw((name) => `${name} ILIKE '%${query}%'`),
-        },
-        relations: ['store'],
-        skip: (page - 1) * 25,
-        take: 25,
-      });
+      let products, totalResults;
+      if (user.role === UserRole.Client) {
+        [products, totalResults] = await this.products.findAndCount({
+          where: {
+            productRole: UserRole.Retailer,
+            name: Raw((name) => `${name} ILIKE '%${query}%'`),
+          },
+          relations: ['store'],
+          skip: (page - 1) * 25,
+          take: 25,
+        });
+      } else if (user.role === UserRole.Retailer) {
+        [products, totalResults] = await this.products.findAndCount({
+          where: {
+            productRole: UserRole.Owner,
+            name: Raw((name) => `${name} ILIKE '%${query}%'`),
+          },
+          relations: ['store'],
+          skip: (page - 1) * 25,
+          take: 25,
+        });
+      }
 
       // //Demo code for filtering through location
       // const blabla = this.index.search('7').then(({ hits }) => {
@@ -508,24 +538,22 @@ export class Storeservice {
     try {
       let products, totalResults;
       if (user.role === UserRole.Retailer) {
-        console.log('In 1st if conditon');
         [products, totalResults] = await this.products.findAndCount({
           skip: (page - 1) * 3,
           take: 3,
           relations: ['store'],
           where: {
-            role: UserRole.Owner,
+            productRole: UserRole.Owner,
           },
         });
       } else {
-        console.log('In 2nd if conditon');
         [products, totalResults] = await this.products.findAndCount({
           skip: (page - 1) * 3,
           take: 3,
           relations: ['store'],
           where: {
             store: {
-              role: UserRole.Retailer,
+              productRole: UserRole.Retailer,
             },
           },
         });

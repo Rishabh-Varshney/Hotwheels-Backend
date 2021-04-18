@@ -27,6 +27,15 @@ import { Order } from 'src/orders/entities/order.entity';
 import { Payment } from 'src/payments/entities/payment.entity';
 import { Feedback } from 'src/feedbacks/entities/feedback.entity';
 
+@InputType('lntLngUserType')
+@ObjectType()
+export class latLngUser {
+  @Field((type) => Number, { defaultValue: 40.639751 })
+  lat: number;
+  @Field((type) => Number, { defaultValue: -73.778925 })
+  lng: number;
+}
+
 export enum UserRole {
   Client = 'Client',
   Owner = 'Owner',
@@ -54,6 +63,21 @@ export class User extends CoreEntity {
   @Field((type) => String)
   @IsString()
   location: string;
+
+  @Field((type) => latLngUser, {
+    defaultValue: {
+      lat: -73.778925,
+      lng: 40.639751,
+    },
+  })
+  @Column({
+    type: 'json',
+    default: {
+      lat: -73.778925,
+      lng: 40.639751,
+    },
+  })
+  _geoloc?: latLngUser;
 
   @Column({ type: 'enum', enum: UserRole })
   @Field((type) => UserRole)

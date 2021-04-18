@@ -31,6 +31,7 @@ export class UserService {
     password,
     role,
     location,
+    _geoloc,
   }: CreateAccountInput): Promise<CreateAccountOutput> {
     try {
       const exists = await this.users.findOne({ email });
@@ -38,7 +39,7 @@ export class UserService {
         return { ok: false, error: 'There is a user with that email already' };
       }
       const user = await this.users.save(
-        this.users.create({ email, password, role,location }),
+        this.users.create({ email, password, role, location, _geoloc }),
       );
       const verification = await this.verifications.save(
         this.verifications.create({
@@ -73,18 +74,18 @@ export class UserService {
       }
       // const token = this.jwtService.sign(user.id);
 
-      const otp=Math.floor(100000 + Math.random() * 900000);
+      const otp = Math.floor(100000 + Math.random() * 900000);
       await this.users.save({
-          ...user,
-            otp,
+        ...user,
+        otp,
       });
 
-      const userId=user.id;
+      const userId = user.id;
       this.mailService.sendOtpEmail(email, `${otp}`);
 
       return {
         ok: true,
-        userId: userId
+        userId: userId,
       };
     } catch (error) {
       return {
@@ -108,7 +109,7 @@ export class UserService {
 
   async editProfile(
     userId: number,
-    { email, password,location }: EditProfileInput,
+    { email, password, location, _geoloc }: EditProfileInput,
   ): Promise<EditProfileOutput> {
     try {
       const user = await this.users.findOne(userId);
@@ -124,8 +125,11 @@ export class UserService {
       if (password) {
         user.password = password;
       }
-      if(location){
-        user.location=location;
+      if (location) {
+        user.location = location;
+      }
+      if (_geoloc) {
+        user._geoloc = _geoloc;
       }
       await this.users.save(user);
       return {
@@ -154,17 +158,17 @@ export class UserService {
     }
   }
 
-  async verifyOtp({otp,id}:OTPInput): Promise<OTPOutput> {
+  async verifyOtp({ otp, id }: OTPInput): Promise<OTPOutput> {
     try {
       const user = await this.users.findOne(id);
-      
+
       if (user) {
-        const temp=(user.otp===otp);
-        if(temp){
-            const token = this.jwtService.sign(user.id);
-            return {ok:temp,token};
+        const temp = user.otp === otp;
+        if (temp) {
+          const token = this.jwtService.sign(user.id);
+          return { ok: temp, token };
         }
-        return {ok:temp,error:"OTP Wrong"};
+        return { ok: temp, error: 'OTP Wrong' };
       }
 
       return { ok: false, error: 'User Not FOUND.' };
@@ -172,5 +176,4 @@ export class UserService {
       return { ok: false, error: 'Could not verify OTP.' };
     }
   }
-
 }

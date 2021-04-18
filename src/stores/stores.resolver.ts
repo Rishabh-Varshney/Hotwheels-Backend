@@ -120,10 +120,12 @@ export class CategoryResolver {
   }
 
   @Query((type) => CategoryOutput)
+  @Role(['Client', 'Retailer'])
   category(
+    @AuthUser() owner: User,
     @Args('input') categoryInput: CategoryInput,
   ): Promise<CategoryOutput> {
-    return this.storeservice.findCategoryBySlug(categoryInput);
+    return this.storeservice.findCategoryBySlug(categoryInput, owner);
   }
 }
 
@@ -159,10 +161,12 @@ export class ProductResolver {
   }
 
   @Query((returns) => SearchProductOutput)
+  @Role(['Client', 'Retailer'])
   searchProduct(
+    @AuthUser() owner: User,
     @Args('input') searchProductInput: SearchProductInput,
   ): Promise<SearchProductOutput> {
-    return this.storeservice.searchProductByName(searchProductInput);
+    return this.storeservice.searchProductByName(searchProductInput, owner);
   }
 
   @Query((returns) => ProductOutput)

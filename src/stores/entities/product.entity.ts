@@ -5,7 +5,7 @@ import { Feedback } from 'src/feedbacks/entities/feedback.entity';
 import { UserRole } from 'src/users/entities/user.entity';
 import { Column, Entity, ManyToOne, OneToMany, RelationId } from 'typeorm';
 import { Category } from './category.entity';
-import { latLng, Store } from './store.entity';
+import { latLngStore, Store } from './store.entity';
 
 @InputType('ProductChoiceInputType', { isAbstract: true })
 @ObjectType()
@@ -94,7 +94,7 @@ export class Product extends CoreEntity {
   @IsEnum(UserRole)
   productRole: UserRole;
 
-  @Field((type) => latLng, {
+  @Field((type) => latLngStore, {
     defaultValue: {
       lat: 40.639751,
       lng: -73.778925,
@@ -107,5 +107,5 @@ export class Product extends CoreEntity {
       lng: -73.778925,
     },
   })
-  _geoloc?: latLng;
+  _geoloc?: latLngStore;
 }
