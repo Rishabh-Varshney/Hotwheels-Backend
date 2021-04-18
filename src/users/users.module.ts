@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Feedback } from 'src/feedbacks/entities/feedback.entity';
 import { User } from './entities/user.entity';
 import { Verification } from './entities/verification.entity';
 import { UserResolver } from './users.resolver';

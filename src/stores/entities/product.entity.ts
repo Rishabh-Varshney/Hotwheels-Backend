@@ -1,7 +1,9 @@
 import { Field, InputType, Int, ObjectType } from '@nestjs/graphql';
-import { IsNumber, IsString, Length } from 'class-validator';
+import { IsEnum, IsNumber, IsString, Length } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { Column, Entity, ManyToOne, RelationId } from 'typeorm';
+import { Feedback } from 'src/feedbacks/entities/feedback.entity';
+import { UserRole } from 'src/users/entities/user.entity';
+import { Column, Entity, ManyToOne, OneToMany, RelationId } from 'typeorm';
 import { Category } from './category.entity';
 import { latLng, Store } from './store.entity';
 
@@ -72,6 +74,12 @@ export class Product extends CoreEntity {
   })
   category: Category;
 
+  @Field((type) => Feedback, { nullable: true })
+  @OneToMany((type) => Feedback, (feedback) => feedback.product, {
+    onDelete: 'CASCADE',
+  })
+  feedback: Feedback[];
+
   @Field((type) => Int, { defaultValue: 0 })
   @Column({ default: 0 })
   @IsNumber()
@@ -80,6 +88,11 @@ export class Product extends CoreEntity {
   @Field((type) => String, { defaultValue: 'Today' })
   @Column({ default: 'Today' })
   dateNextAvailable: string;
+
+  @Column({ type: 'enum', enum: UserRole, nullable: true })
+  // @Field((type) => UserRole, { nullable: true })
+  @IsEnum(UserRole)
+  productRole: UserRole;
 
   @Field((type) => latLng, {
     defaultValue: {

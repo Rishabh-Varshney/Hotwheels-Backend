@@ -21,6 +21,8 @@ import { PaymentsModule } from './payments/payments.module';
 import { Payment } from './payments/entities/payment.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { UploadsModule } from './uploads/uploads.module';
+import { FeedbacksModule } from './feedbacks/feedbacks.module';
+import { Feedback } from './feedbacks/entities/feedback.entity';
 
 @Module({
   imports: [
@@ -62,6 +64,7 @@ import { UploadsModule } from './uploads/uploads.module';
         Order,
         OrderItem,
         Payment,
+        Feedback,
       ],
     }),
     GraphQLModule.forRoot({
@@ -90,6 +93,7 @@ import { UploadsModule } from './uploads/uploads.module';
     CommonModule,
     PaymentsModule,
     UploadsModule,
+    FeedbacksModule,
   ],
   controllers: [],
   providers: [],

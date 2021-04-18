@@ -8,9 +8,6 @@ class CreateOrderItemInput {
   @Field((type) => Int)
   productId: number;
 
-  // @Field((type) => [OrderItemOption], { nullable: true })
-  // options?: OrderItemOption[];
-
   @Field((type) => Int)
   quantity?: number;
 }

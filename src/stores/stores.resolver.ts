@@ -171,10 +171,12 @@ export class ProductResolver {
   }
 
   @Query((returns) => ProductsOutput)
+  @Role(['Client', 'Retailer'])
   products(
+    @AuthUser() owner: User,
     @Args('input') productsInput: ProductsInput,
   ): Promise<ProductsOutput> {
-    return this.storeservice.allProducts(productsInput);
+    return this.storeservice.allProducts(productsInput, owner);
   }
 
   @Query((returns) => SearchStoreOutput)

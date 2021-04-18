@@ -51,15 +51,6 @@ export class Store extends CoreEntity {
   })
   _geoloc?: latLng;
 
-  //HATANA HAI BC TUJHE
-  // @Field((type) => Category, { nullable: true })
-  // @ManyToOne((type) => Category, (category) => category.stores, {
-  //   nullable: true,
-  //   onDelete: 'SET NULL',
-  //   eager: true,
-  // })
-  // category: Category;
-
   @Field((type) => User)
   @ManyToOne((type) => User, (user) => user.stores, {
     onDelete: 'CASCADE',

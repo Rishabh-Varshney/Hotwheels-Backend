@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/users/entities/user.entity';
-import { Like, Raw, Repository } from 'typeorm';
+import { User, UserRole } from 'src/users/entities/user.entity';
+import { In, Like, Raw, Repository } from 'typeorm';
 import { AllCategoriesOutput } from './dtos/all-categories.dto';
 import { CategoryInput, CategoryOutput } from './dtos/category.dto';
 import {
@@ -33,6 +33,7 @@ import { ProductInput, ProductOutput } from './dtos/product.dto';
 import { ProductsInput, ProductsOutput } from './dtos/products.dto';
 
 import algoliasearch from 'algoliasearch';
+import { response } from 'express';
 @Injectable()
 export class Storeservice {
   constructor(
@@ -275,6 +276,7 @@ export class Storeservice {
           error: 'Store not found',
         };
       }
+
       if (owner.id !== store.ownerId) {
         return {
           ok: false,
@@ -287,6 +289,7 @@ export class Storeservice {
       });
 
       newProduct._geoloc = store._geoloc;
+      newProduct.productRole = store.owner.role;
 
       const category = await this.categories.getOrCreate(
         createProductInput.categoryName,
@@ -420,16 +423,17 @@ export class Storeservice {
         take: 25,
       });
 
-      //Demo code for filtering through location
-      // const blabla = await this.index
-      //   .search('', {
-      //     aroundLatLng: '80.71, 95.01',
-      //   })
-      //   .then(({ hits }) => {
-      //     return hits;
-      //   });
+      // //Demo code for filtering through location
+      // const blabla = this.index.search('7').then(({ hits }) => {
+      //   return hits;
+      // });
+      // let cast = Promise.resolve(blabla);
 
-      // console.log(Object.keys(blabla).length);
+      // cast.then((_) => {
+      //   return _;
+      // });
+      // console.log(cast);
+      // //console.log(Object.keys(blabla).length);
 
       return {
         ok: true,
@@ -497,13 +501,35 @@ export class Storeservice {
     }
   }
 
-  async allProducts({ page }: ProductsInput): Promise<ProductsOutput> {
+  async allProducts(
+    { page }: ProductsInput,
+    user: User,
+  ): Promise<ProductsOutput> {
     try {
-      const [products, totalResults] = await this.products.findAndCount({
-        skip: (page - 1) * 3,
-        take: 3,
-      });
-
+      let products, totalResults;
+      if (user.role === UserRole.Retailer) {
+        console.log('In 1st if conditon');
+        [products, totalResults] = await this.products.findAndCount({
+          skip: (page - 1) * 3,
+          take: 3,
+          relations: ['store'],
+          where: {
+            role: UserRole.Owner,
+          },
+        });
+      } else {
+        console.log('In 2nd if conditon');
+        [products, totalResults] = await this.products.findAndCount({
+          skip: (page - 1) * 3,
+          take: 3,
+          relations: ['store'],
+          where: {
+            store: {
+              role: UserRole.Retailer,
+            },
+          },
+        });
+      }
       return {
         ok: true,
         results: products,
