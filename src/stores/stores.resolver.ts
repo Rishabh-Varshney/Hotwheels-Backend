@@ -40,6 +40,7 @@ import {
 } from './dtos/search-product.dto';
 import { ProductInput, ProductOutput } from './dtos/product.dto';
 import { ProductsInput, ProductsOutput } from './dtos/products.dto';
+import { FilterProductInput, FilterProductOutput } from './dtos/filter-product-by-location.dto';
 
 @Resolver((of) => Store)
 export class StoreResolver {
@@ -188,5 +189,14 @@ export class ProductResolver {
     @Args('input') searchStoreInput: SearchStoreInput,
   ): Promise<SearchStoreOutput> {
     return this.storeservice.searchStoreByName(searchStoreInput);
+  }
+
+  @Query((returns) => FilterProductOutput)
+  @Role(['Client', 'Retailer'])
+  filterProduct(
+    @AuthUser() owner: User,
+    @Args('input') filterProductInput: FilterProductInput,
+  ): Promise<FilterProductOutput> {
+    return this.storeservice.filterProductByName(filterProductInput, owner);
   }
 }
