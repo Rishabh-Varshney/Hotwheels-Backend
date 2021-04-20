@@ -17,7 +17,6 @@ import { EditOrderInput, EditOrderOutput } from './dtos/edit-order.dto';
 import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
 import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
 import { TakeOrderInput, TakeOrderOutput } from './dtos/take-order.dto';
-import { OrderItem } from './entities/order-item.entity';
 import { Order, OrderStatus } from './entities/order.entity';
 
 @Injectable()
@@ -25,8 +24,6 @@ export class OrderService {
   constructor(
     @InjectRepository(Order)
     private readonly orders: Repository<Order>,
-    @InjectRepository(OrderItem)
-    private readonly orderItems: Repository<OrderItem>,
     @InjectRepository(Store)
     private readonly stores: Repository<Store>,
     @InjectRepository(Product)
@@ -39,7 +36,7 @@ export class OrderService {
 
   async createOrder(
     customer: User,
-    { storeId, items }: CreateOrderInput,
+    { storeId, productId, quantity }: CreateOrderInput,
   ): Promise<CreateOrderOutput> {
     try {
       const store = await this.stores.findOne(storeId);
@@ -50,55 +47,46 @@ export class OrderService {
         };
       }
 
-      for (const item of items) {
-        const product = await this.products.findOne(item.productId);
-        if (product.stocks < item.quantity) {
-          return {
-            ok: false,
-            error: 'Some Product Quantity Not Available.',
-          };
-        }
+      const product = await this.products.findOne(productId);
+      if (product.stocks < quantity) {
+        return {
+          ok: false,
+          error: 'Product Quantity Not Available.',
+        };
       }
 
       let orderFinalPrice = 0;
-      const orderItems: OrderItem[] = [];
-      for (const item of items) {
-        const product = await this.products.findOne(item.productId);
-        if (!product) {
-          return {
-            ok: false,
-            error: 'Product not found.',
-          };
-        }
-        let productFinalPrice = product.price * item.quantity;
 
-        product.stocks -= item.quantity;
-        await this.products.save(product);
-
-        //ALGOLIA
-        await this.index.deleteBy({
-          filters: `id:${product.id}`,
-        });
-
-        await this.index.saveObject(product, {
-          autoGenerateObjectIDIfNotExist: true,
-        });
-
-        orderFinalPrice = orderFinalPrice + productFinalPrice;
-        const orderItem = await this.orderItems.save(
-          this.orderItems.create({
-            product,
-            // options: item.options,
-          }),
-        );
-        orderItems.push(orderItem);
+      if (!product) {
+        return {
+          ok: false,
+          error: 'Product not found.',
+        };
       }
+
+      let productFinalPrice = product.price * quantity;
+
+      product.stocks -= quantity;
+      await this.products.save(product);
+
+      //ALGOLIA
+      await this.index.deleteBy({
+        filters: `id:${product.id}`,
+      });
+
+      await this.index.saveObject(product, {
+        autoGenerateObjectIDIfNotExist: true,
+      });
+      //
+
+      orderFinalPrice = orderFinalPrice + productFinalPrice;
       const order = await this.orders.save(
         this.orders.create({
           customer,
           store,
           total: orderFinalPrice,
-          items: orderItems,
+          product,
+          quantity,
         }),
       );
       await this.pubSub.publish(NEW_PENDING_ORDER, {
@@ -144,9 +132,9 @@ export class OrderService {
           },
           relations: ['orders'],
         });
-        orders = stores.map((store) => store.orders).flat(1);
+        orders = stores.map(store => store.orders).flat(1);
         if (status) {
-          orders = orders.filter((order) => order.status === status);
+          orders = orders.filter(order => order.status === status);
         }
       } else if (user.role === UserRole.Retailer) {
         const stores = await this.stores.find({
@@ -161,11 +149,10 @@ export class OrderService {
             ...(status && { status }),
           },
         });
-        let brands = stores.map((store) => store.orders).flat(1);
+        let brands = stores.map(store => store.orders).flat(1);
         if (status) {
-          brands = brands.filter((order) => order.status === status);
+          brands = brands.filter(order => order.status === status);
         }
-
         orders = orders.concat(brands);
       }
       return {
@@ -191,16 +178,13 @@ export class OrderService {
     if (user.role === UserRole.Owner && order.store.ownerId !== user.id) {
       canSee = false;
     }
-
-    if (user.role === UserRole.Retailer && order.customerId !== user.id) {
-      canSee = false;
-    } else if (
+    if (
       user.role === UserRole.Retailer &&
+      order.customerId !== user.id &&
       order.store.ownerId !== user.id
     ) {
       canSee = false;
     }
-
     return canSee;
   }
 
@@ -212,6 +196,7 @@ export class OrderService {
       const order = await this.orders.findOne(orderId, {
         relations: ['store'],
       });
+
       if (!order) {
         return {
           ok: false,

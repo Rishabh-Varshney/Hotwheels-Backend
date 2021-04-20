@@ -99,8 +99,8 @@ export class User extends CoreEntity {
   stores: Store[];
 
   @Field((type) => [Feedback])
-  @OneToOne((type) => Feedback, (feedback) => feedback.customer)
-  feedback: Feedback;
+  @OneToMany((type) => Feedback, (feedback) => feedback.customer)
+  feedbacks: Feedback[];
 
   @Field((type) => [Order])
   @OneToMany((type) => Order, (order) => order.customer)

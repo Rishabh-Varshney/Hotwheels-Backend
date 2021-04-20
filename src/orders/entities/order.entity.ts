@@ -5,8 +5,9 @@ import {
   ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
-import { IsEnum, IsNumber } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
+import { Product } from 'src/stores/entities/product.entity';
 import { Store } from 'src/stores/entities/store.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
@@ -17,7 +18,6 @@ import {
   ManyToOne,
   RelationId,
 } from 'typeorm';
-import { OrderItem } from './order-item.entity';
 
 export enum OrderStatus {
   Pending = 'Pending',
@@ -63,15 +63,31 @@ export class Order extends CoreEntity {
   })
   store?: Store;
 
-  @Field((type) => [OrderItem])
-  @ManyToMany((type) => OrderItem, { eager: true })
-  @JoinTable()
-  items: OrderItem[];
+  @Field((type) => Product)
+  @ManyToOne((type) => Product, {
+    nullable: true,
+    onDelete: 'CASCADE',
+    eager: true,
+  })
+  product: Product;
+
+  @RelationId((order: Order) => order.product)
+  productId: number;
+
+  @Field((type) => Float, { defaultValue: 1 })
+  @Column({ default: 1 })
+  @IsNumber()
+  quantity?: number;
 
   @Column({ nullable: true })
   @Field((type) => Float, { nullable: true })
   @IsNumber()
   total?: number;
+
+  @Column({ default:false})
+  @Field((type) => Boolean, { defaultValue: false })
+  @IsBoolean()
+  FeedbackExists?: boolean;
 
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.Pending })
   @Field((type) => OrderStatus)

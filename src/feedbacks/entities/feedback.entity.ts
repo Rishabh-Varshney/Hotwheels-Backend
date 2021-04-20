@@ -9,17 +9,15 @@ import { Column, Entity, ManyToOne, OneToOne, RelationId } from 'typeorm';
 @ObjectType()
 @Entity()
 export class Feedback extends CoreEntity {
-  @Field((type) => User, { nullable: true })
-  @OneToOne((type) => User, (user) => user.feedback, {
+  @Field((type) => User)
+  @ManyToOne((type) => User, (user) => user.feedbacks, {
     onDelete: 'SET NULL',
-    nullable: true,
   })
   customer?: User;
 
-  @Field((type) => Product, { nullable: true })
+  @Field((type) => Product)
   @ManyToOne((type) => Product, (product) => product.feedback, {
-    onDelete: 'SET NULL',
-    nullable: true,
+    onDelete: 'SET NULL'
     //eager: true,
   })
   product?: Product;
