@@ -23,7 +23,7 @@ export class MailService {
     form.append('to', `hotwheelswebapp2@gmail.com`);
     form.append('subject', subject);
     form.append('template', template);
-    emailVars.forEach(eVar => form.append(`v:${eVar.key}`, eVar.value));
+    emailVars.forEach((eVar) => form.append(`v:${eVar.key}`, eVar.value));
     try {
       await got.post(
         `https://api.mailgun.net/v3/${this.options.domain}/messages`,
@@ -48,11 +48,29 @@ export class MailService {
       { key: 'username', value: email },
     ]);
   }
-  
+
   sendOtpEmail(email: string, code: string) {
     this.sendEmail(`OTP: ${code}`, 'verify-email', [
       { key: 'code', value: code },
       { key: 'username', value: email },
     ]);
+  }
+
+  sendDeliveryEmail(email: string) {
+    this.sendEmail('Order Delivered', 'verify-email-test-2', [
+      // { key: 'code', value: code },
+      { key: 'username', value: email },
+    ]);
+  }
+
+  sendFeedbackEmail(email: string) {
+    this.sendEmail(
+      'Please Provide Feedback For The Last Order',
+      'verify-email-test-2',
+      [
+        // { key: 'code', value: code },
+        { key: 'username', value: email },
+      ],
+    );
   }
 }

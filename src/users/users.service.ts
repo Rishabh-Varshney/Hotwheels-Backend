@@ -53,7 +53,7 @@ export class UserService {
     }
   }
 
-  async login({ email, password }: LoginInput): Promise<LoginOutput> {
+  async login({ email, password, _geoloc }: LoginInput): Promise<LoginOutput> {
     try {
       const user = await this.users.findOne(
         { email },
@@ -75,6 +75,10 @@ export class UserService {
       // const token = this.jwtService.sign(user.id);
 
       const otp = Math.floor(100000 + Math.random() * 900000);
+      if (_geoloc) {
+        user._geoloc = _geoloc;
+      }
+
       await this.users.save({
         ...user,
         otp,

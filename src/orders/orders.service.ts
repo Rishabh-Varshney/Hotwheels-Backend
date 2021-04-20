@@ -8,6 +8,7 @@ import {
   NEW_PENDING_ORDER,
   PUB_SUB,
 } from 'src/common/common.constants';
+import { MailService } from 'src/mail/mail.service';
 import { Product } from 'src/stores/entities/product.entity';
 import { Store } from 'src/stores/entities/store.entity';
 import { User, UserRole } from 'src/users/entities/user.entity';
@@ -28,6 +29,9 @@ export class OrderService {
     private readonly stores: Repository<Store>,
     @InjectRepository(Product)
     private readonly products: Repository<Product>,
+    @InjectRepository(User)
+    private readonly users: Repository<User>,
+    private readonly mailService: MailService,
     @Inject(PUB_SUB) private readonly pubSub: PubSub,
   ) {}
 
@@ -132,9 +136,9 @@ export class OrderService {
           },
           relations: ['orders'],
         });
-        orders = stores.map(store => store.orders).flat(1);
+        orders = stores.map((store) => store.orders).flat(1);
         if (status) {
-          orders = orders.filter(order => order.status === status);
+          orders = orders.filter((order) => order.status === status);
         }
       } else if (user.role === UserRole.Retailer) {
         const stores = await this.stores.find({
@@ -149,9 +153,9 @@ export class OrderService {
             ...(status && { status }),
           },
         });
-        let brands = stores.map(store => store.orders).flat(1);
+        let brands = stores.map((store) => store.orders).flat(1);
         if (status) {
-          brands = brands.filter(order => order.status === status);
+          brands = brands.filter((order) => order.status === status);
         }
         orders = orders.concat(brands);
       }
@@ -244,11 +248,11 @@ export class OrderService {
       if (user.role === UserRole.Client) {
         canEdit = false;
       }
-
+      //TBC
       if (user.role === UserRole.Retailer) {
-        if (order.customerId !== user.id) {
+        if (order.customerId === user.id) {
           canEdit = false;
-        } else if (order.store.ownerId !== user.id) {
+        } else if (order.store.ownerId === user.id) {
           if (status !== OrderStatus.Packing && status !== OrderStatus.Packed) {
             canEdit = false;
           }
@@ -279,6 +283,8 @@ export class OrderService {
         status,
       });
       const newOrder = { ...order, status };
+
+      //TBC
       if (user.role === UserRole.Owner) {
         if (status === OrderStatus.Packed) {
           await this.pubSub.publish(NEW_PACKED_ORDER, {
@@ -287,6 +293,16 @@ export class OrderService {
         }
       }
       await this.pubSub.publish(NEW_ORDER_UPDATE, { orderUpdates: newOrder });
+
+      //TODO : refactor template to send full order details of the order
+
+      const orderStatusForEmail = await this.orders.findOne(orderId);
+      if (orderStatusForEmail.status === 'Delivered') {
+        const custEmail = await this.users.findOne(order.customerId);
+        this.mailService.sendDeliveryEmail(custEmail.email);
+        this.mailService.sendFeedbackEmail(custEmail.email);
+      }
+
       return {
         ok: true,
       };
@@ -323,13 +339,14 @@ export class OrderService {
       await this.pubSub.publish(NEW_ORDER_UPDATE, {
         orderUpdates: { ...order, driver },
       });
+
       return {
         ok: true,
       };
     } catch {
       return {
         ok: false,
-        error: 'Could not upate order.',
+        error: 'Could not update order.',
       };
     }
   }

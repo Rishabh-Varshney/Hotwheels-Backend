@@ -3,6 +3,7 @@ import { PubSub } from 'graphql-subscriptions';
 import { PUB_SUB } from './common.constants';
 
 const pubsub = new PubSub();
+pubsub.ee.setMaxListeners(1000);
 
 @Global()
 @Module({

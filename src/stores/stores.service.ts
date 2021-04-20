@@ -34,7 +34,10 @@ import { ProductsInput, ProductsOutput } from './dtos/products.dto';
 
 import algoliasearch from 'algoliasearch';
 import { response } from 'express';
-import { FilterProductInput, FilterProductOutput } from './dtos/filter-product-by-location.dto';
+import {
+  FilterProductInput,
+  FilterProductOutput,
+} from './dtos/filter-product-by-location.dto';
 @Injectable()
 export class Storeservice {
   constructor(
@@ -55,7 +58,7 @@ export class Storeservice {
     try {
       const newStore = this.stores.create(createStoreInput);
       newStore.owner = owner;
-      newStore._geoloc=owner._geoloc;
+      newStore._geoloc = owner._geoloc;
       // const category = await this.categories.getOrCreate(
       //   createStoreInput.categoryName,
       // );
@@ -548,7 +551,7 @@ export class Storeservice {
             productRole: UserRole.Owner,
           },
         });
-      }  else if (user.role === UserRole.Client) {
+      } else if (user.role === UserRole.Client) {
         [products, totalResults] = await this.products.findAndCount({
           skip: (page - 1) * 3,
           take: 3,
@@ -556,7 +559,8 @@ export class Storeservice {
           where: {
             productRole: UserRole.Retailer,
           },
-        });}
+        });
+      }
       return {
         ok: true,
         results: products,
@@ -574,42 +578,48 @@ export class Storeservice {
   // FILTERING
 
   //URL for calculating dist according to radius
-  //http://www.movable-type.co.uk/scripts/latlong.html 
-   calculateDistance(lat1, lon1, lat2, lon2) {
-    var radlat1 = Math.PI * lat1 / 180
-    var radlat2 = Math.PI * lat2 / 180
-    var radlon1 = Math.PI * lon1 / 180
-    var radlon2 = Math.PI * lon2 / 180
-    var theta = lon1 - lon2
-    var radtheta = Math.PI * theta / 180
-    var dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
-    dist = Math.acos(dist)
-    dist = dist * 180 / Math.PI
-    dist = dist * 60 * 1.1515
-    dist = dist * 1.609344
-    return dist 
-}
+  //http://www.movable-type.co.uk/scripts/latlong.html
+  calculateDistance(lat1, lon1, lat2, lon2) {
+    var radlat1 = (Math.PI * lat1) / 180;
+    var radlat2 = (Math.PI * lat2) / 180;
+    var radlon1 = (Math.PI * lon1) / 180;
+    var radlon2 = (Math.PI * lon2) / 180;
+    var theta = lon1 - lon2;
+    var radtheta = (Math.PI * theta) / 180;
+    var dist =
+      Math.sin(radlat1) * Math.sin(radlat2) +
+      Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+    dist = Math.acos(dist);
+    dist = (dist * 180) / Math.PI;
+    dist = dist * 60 * 1.1515;
+    dist = dist * 1.609344;
+    return dist;
+  }
 
   async filterProductByName(
     { radiusInKm, page }: FilterProductInput,
     user: User,
   ): Promise<FilterProductOutput> {
     try {
-      
-      let productsByProductRole, totalResults
-      let products=[]
+      let productsByProductRole, totalResults;
+      let products = [];
       if (user.role === UserRole.Client) {
-        [productsByProductRole, totalResults] = await this.products.findAndCount({
+        [
+          productsByProductRole,
+          totalResults,
+        ] = await this.products.findAndCount({
           where: {
             productRole: UserRole.Retailer,
           },
           relations: ['store'],
           skip: (page - 1) * 25,
           take: 25,
-      });
-      
+        });
       } else if (user.role === UserRole.Retailer) {
-        [productsByProductRole, totalResults] = await this.products.findAndCount({
+        [
+          productsByProductRole,
+          totalResults,
+        ] = await this.products.findAndCount({
           where: {
             productRole: UserRole.Owner,
           },
@@ -618,17 +628,17 @@ export class Storeservice {
           take: 25,
         });
       }
-      productsByProductRole.forEach(product => {
-        const lat1=user._geoloc.lat
-        const lng1=user._geoloc.lng
-        const lat2=product._geoloc.lat
-        const lng2=product._geoloc.lng
-        const dist=this.calculateDistance(lat1,lng1,lat2,lng2)
-        const km=Number(radiusInKm)
-        console.log(dist,"<------THIS IS THE KM")
-        if (dist<=km){
-          products.push(product)
-
+      productsByProductRole.forEach((product) => {
+        const lat1 = user._geoloc.lat;
+        const lng1 = user._geoloc.lng;
+        const lat2 = product._geoloc.lat;
+        const lng2 = product._geoloc.lng;
+        const dist = this.calculateDistance(lat1, lng1, lat2, lng2);
+        const km = Number(radiusInKm);
+        // console.log(dist, '<------THIS IS THE KM');
+        if (dist <= km) {
+          products.push(product);
+          totalResults -= 1;
         }
       });
       return {
