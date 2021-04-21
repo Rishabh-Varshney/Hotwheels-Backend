@@ -63,6 +63,13 @@ export class MailService {
     ]);
   }
 
+  sendPackedEmail(email: string) {
+    this.sendEmail('Order Packed:Come Pick Your Order', 'verify-email-test-2', [
+      // { key: 'code', value: code },
+      { key: 'username', value: email },
+    ]);
+  }
+
   sendFeedbackEmail(email: string) {
     this.sendEmail(
       'Please Provide Feedback For The Last Order',

@@ -18,7 +18,7 @@ import { EditOrderInput, EditOrderOutput } from './dtos/edit-order.dto';
 import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
 import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
 import { TakeOrderInput, TakeOrderOutput } from './dtos/take-order.dto';
-import { Order, OrderStatus } from './entities/order.entity';
+import { Order, OrderMode, OrderStatus } from './entities/order.entity';
 
 @Injectable()
 export class OrderService {
@@ -73,15 +73,13 @@ export class OrderService {
       product.stocks -= quantity;
       await this.products.save(product);
 
-      //ALGOLIA
-      await this.index.deleteBy({
-        filters: `id:${product.id}`,
-      });
+      // await this.index.deleteBy({
+      //   filters: `id:${product.id}`,
+      // });
 
-      await this.index.saveObject(product, {
-        autoGenerateObjectIDIfNotExist: true,
-      });
-      //
+      // await this.index.saveObject(product, {
+      //   autoGenerateObjectIDIfNotExist: true,
+      // });
 
       orderFinalPrice = orderFinalPrice + productFinalPrice;
       const order = await this.orders.save(
@@ -91,6 +89,78 @@ export class OrderService {
           total: orderFinalPrice,
           product,
           quantity,
+        }),
+      );
+      await this.pubSub.publish(NEW_PENDING_ORDER, {
+        pendingOrders: { order, ownerId: store.ownerId },
+      });
+      return {
+        ok: true,
+        orderId: order.id,
+      };
+    } catch (e) {
+      console.log(e);
+      return {
+        ok: false,
+        error: 'Could not create order.',
+      };
+    }
+  }
+
+  //* Create Order Offline Method
+
+  async createOrderOffline(
+    customer: User,
+    { storeId, productId, quantity }: CreateOrderInput,
+  ): Promise<CreateOrderOutput> {
+    try {
+      const store = await this.stores.findOne(storeId);
+      if (!store) {
+        return {
+          ok: false,
+          error: 'Store not found',
+        };
+      }
+
+      const product = await this.products.findOne(productId);
+      if (product.stocks < quantity) {
+        return {
+          ok: false,
+          error: 'Product Quantity Not Available.',
+        };
+      }
+
+      let orderFinalPrice = 0;
+
+      if (!product) {
+        return {
+          ok: false,
+          error: 'Product not found.',
+        };
+      }
+
+      let productFinalPrice = product.price * quantity;
+
+      product.stocks -= quantity;
+      await this.products.save(product);
+
+      // await this.index.deleteBy({
+      //   filters: `id:${product.id}`,
+      // });
+
+      // await this.index.saveObject(product, {
+      //   autoGenerateObjectIDIfNotExist: true,
+      // });
+
+      orderFinalPrice = orderFinalPrice + productFinalPrice;
+      const order = await this.orders.save(
+        this.orders.create({
+          customer,
+          store,
+          total: orderFinalPrice,
+          product,
+          quantity,
+          mode: OrderMode.Offline,
         }),
       );
       await this.pubSub.publish(NEW_PENDING_ORDER, {
@@ -285,7 +355,7 @@ export class OrderService {
       const newOrder = { ...order, status };
 
       //TBC
-      if (user.role === UserRole.Owner) {
+      if (user.role === UserRole.Owner || user.role === UserRole.Retailer) {
         if (status === OrderStatus.Packed) {
           await this.pubSub.publish(NEW_PACKED_ORDER, {
             packedOrders: newOrder,
@@ -294,9 +364,96 @@ export class OrderService {
       }
       await this.pubSub.publish(NEW_ORDER_UPDATE, { orderUpdates: newOrder });
 
-      //TODO : refactor template to send full order details of the order
+      // refactor template to send full order details of the order in the delivery mail
 
       const orderStatusForEmail = await this.orders.findOne(orderId);
+      if (orderStatusForEmail.status === 'Delivered') {
+        const custEmail = await this.users.findOne(order.customerId);
+        this.mailService.sendDeliveryEmail(custEmail.email);
+        this.mailService.sendFeedbackEmail(custEmail.email);
+      }
+
+      return {
+        ok: true,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not edit order.',
+      };
+    }
+  }
+
+  //* Edit Orders Offline
+
+  async editOrderOffline(
+    user: User,
+    { id: orderId, status }: EditOrderInput,
+  ): Promise<EditOrderOutput> {
+    try {
+      const order = await this.orders.findOne(orderId);
+      if (!order) {
+        return {
+          ok: false,
+          error: 'Order not found.',
+        };
+      }
+      if (!this.canSeeOrder(user, order)) {
+        return {
+          ok: false,
+          error: "Can't see this.",
+        };
+      }
+      let canEdit = true;
+      if (user.role === UserRole.Client) {
+        canEdit = false;
+      }
+      //TBC
+      if (user.role === UserRole.Retailer) {
+        if (order.customerId === user.id) {
+          canEdit = false;
+        } else if (order.store.ownerId === user.id) {
+          if (
+            status !== OrderStatus.Packing &&
+            status !== OrderStatus.Packed &&
+            status !== OrderStatus.Delivered
+          ) {
+            canEdit = false;
+          }
+        }
+      }
+
+      if (user.role === UserRole.Owner) {
+        if (
+          status !== OrderStatus.Packing &&
+          status !== OrderStatus.Packed &&
+          status !== OrderStatus.Delivered
+        ) {
+          canEdit = false;
+        }
+      }
+      if (!canEdit) {
+        return {
+          ok: false,
+          error: "You can't do that.",
+        };
+      }
+      await this.orders.save({
+        id: orderId,
+        status,
+      });
+      const newOrder = { ...order, status };
+
+      await this.pubSub.publish(NEW_ORDER_UPDATE, { orderUpdates: newOrder });
+
+      //refactor template to send full order details of the order in the delivery mail
+
+      const orderStatusForEmail = await this.orders.findOne(orderId);
+      if (orderStatusForEmail.status === 'Packed') {
+        const custEmail = await this.users.findOne(order.customerId);
+        this.mailService.sendPackedEmail(custEmail.email);
+      }
+
       if (orderStatusForEmail.status === 'Delivered') {
         const custEmail = await this.users.findOne(order.customerId);
         this.mailService.sendDeliveryEmail(custEmail.email);
@@ -330,6 +487,12 @@ export class OrderService {
         return {
           ok: false,
           error: 'This order already has a driver',
+        };
+      }
+      if (order.mode === OrderMode.Offline) {
+        return {
+          ok: false,
+          error: 'You are not allowed to deliver Offline mode Order.',
         };
       }
       await this.orders.save({

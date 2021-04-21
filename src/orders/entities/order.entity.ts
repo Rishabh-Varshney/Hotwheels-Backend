@@ -29,6 +29,13 @@ export enum OrderStatus {
 
 registerEnumType(OrderStatus, { name: 'OrderStatus' });
 
+export enum OrderMode {
+  Offline = 'Offline',
+  Online = 'Online',
+}
+
+registerEnumType(OrderMode, { name: 'OrderMode' });
+
 @InputType('OrderInputType', { isAbstract: true })
 @ObjectType()
 @Entity()
@@ -84,7 +91,7 @@ export class Order extends CoreEntity {
   @IsNumber()
   total?: number;
 
-  @Column({ default:false})
+  @Column({ default: false })
   @Field((type) => Boolean, { defaultValue: false })
   @IsBoolean()
   FeedbackExists?: boolean;
@@ -93,4 +100,9 @@ export class Order extends CoreEntity {
   @Field((type) => OrderStatus)
   @IsEnum(OrderStatus)
   status: OrderStatus;
+
+  @Column({ type: 'enum', enum: OrderMode, default: OrderMode.Online })
+  @Field((type) => OrderMode)
+  @IsEnum(OrderMode)
+  mode: OrderMode;
 }

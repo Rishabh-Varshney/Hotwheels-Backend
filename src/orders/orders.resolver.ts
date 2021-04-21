@@ -36,6 +36,16 @@ export class OrderResolver {
     return this.ordersService.createOrder(customer, createOrderInput);
   }
 
+  @Mutation((returns) => CreateOrderOutput)
+  @Role(['Client', 'Retailer'])
+  async createOrderOffline(
+    @AuthUser() customer: User,
+    @Args('input')
+    createOrderInput: CreateOrderInput,
+  ): Promise<CreateOrderOutput> {
+    return this.ordersService.createOrderOffline(customer, createOrderInput);
+  }
+
   @Query((returns) => GetOrdersOutput)
   @Role(['Any'])
   async getOrders(
@@ -61,6 +71,15 @@ export class OrderResolver {
     @Args('input') editOrderInput: EditOrderInput,
   ): Promise<EditOrderOutput> {
     return this.ordersService.editOrder(user, editOrderInput);
+  }
+
+  @Mutation((returns) => EditOrderOutput)
+  @Role(['Retailer', 'Owner'])
+  async editOrderOffline(
+    @AuthUser() user: User,
+    @Args('input') editOrderInput: EditOrderInput,
+  ): Promise<EditOrderOutput> {
+    return this.ordersService.editOrderOffline(user, editOrderInput);
   }
 
   @Subscription((returns) => Order, {
