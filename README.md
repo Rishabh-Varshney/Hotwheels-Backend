@@ -1,6 +1,7 @@
 # Hotwheels
 
 The Backend of Hotwheels
+- Frontend Link: https://github.com/rajatvohra/Hotwheels-frontend
 
 ## User Model
 
