@@ -1,7 +1,17 @@
-# Hotwheels
+# HotWheels : Live MART- Online Delivery System
 
-The Backend of Hotwheels
+- A Web application for e-marketing that connects customers (individuals who shop for home purpose) to retailers (people dealing with multiple items who stores items in large quantities) and retailers to wholesalers (warehouse maintaining people)
+- Tech. Stack: Typescript,Nest.js,GraphQL,PostgreSQL,TypeORM
 - Frontend Link: https://github.com/rajatvohra/Hotwheels-frontend
+
+## Team-Details:
+Member | College Id
+------------ | -------------
+Rishabh Varshney | 2017B4A31124H
+Abhyudaya Prakash Rai   | 2017B4AA0816H
+Rajat Vohra | 2017B4AA0966H
+Vrinda | 2017B1A31316H
+
 
 ## User Model
 
@@ -51,3 +61,5 @@ The Backend of Hotwheels
 ## Payments
 
 - Payments(CRON)
+
+
